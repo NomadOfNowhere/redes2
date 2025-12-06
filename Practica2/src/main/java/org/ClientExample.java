@@ -1,12 +1,13 @@
 package org;
 
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket; // Librería JLayer
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import javazoom.jl.player.Player; // Librería JLayer
-import java.net.DatagramSocket;
 
-public class Client {
+public class ClientExample {
     private static final int PORT = 10000;
     private static final int PACKET_SIZE = 2048;
 

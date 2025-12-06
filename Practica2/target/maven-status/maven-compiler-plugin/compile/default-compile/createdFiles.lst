@@ -1,2 +1,4 @@
 org/Client.class
+org/Sound.class
 org/Server.class
+org/ClientSound.class

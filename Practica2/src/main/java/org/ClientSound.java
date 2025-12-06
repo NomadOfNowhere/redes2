@@ -1,11 +1,17 @@
 package org;
 
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.DatagramPacket; // Asegúrate de importar esto
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
-import javazoom.jl.player.Player; // Asegúrate de importar esto
 
-public class Client {
+import javazoom.jl.player.Player;
+
+public class ClientSound {
     private static final int PORT = 10000;
     private static final int PACKET_SIZE = 2048;
 
@@ -86,6 +92,8 @@ public class Client {
             System.out.println("Reproducción terminada.");
             memoryBuffer.close();
 
+            System.out.println("Programa terminado exitosamente.");
+            System.exit(0);
         } catch (Exception e) {
             e.printStackTrace();
         }
