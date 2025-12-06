@@ -1,0 +1,14 @@
+[
+  { "id": 1, "title": "Neon Dreams", "artist": "Electronic Pulse", "album": "Synthwave Collection", "image": "https://images.unsplash.com/photo-1614624532983-4ce03382d63d?w=400&h=400&fit=crop", "duration": "3:45", "genre": "Synthwave" },
+  { "id": 2, "title": "Midnight Drive", "artist": "RetroWave", "album": "Night Riders", "image": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop", "duration": "4:12", "genre": "Synthwave" },
+  { "id": 3, "title": "Urban Lights", "artist": "DJ Shadow", "album": "City Nights", "image": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop", "duration": "3:30", "genre": "Electronic" },
+  { "id": 4, "title": "Cyber Heart", "artist": "Neon Future", "album": "Digital Love", "image": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=400&fit=crop", "duration": "4:05", "genre": "EDM" },
+  { "id": 5, "title": "Retro Vibes", "artist": "Synthwave Masters", "album": "Back to the 80s", "image": "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=400&fit=crop", "duration": "3:58", "genre": "Synthwave" },
+  { "id": 6, "title": "Electric Soul", "artist": "Bass Drop", "album": "Frequency", "image": "https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=400&h=400&fit=crop", "duration": "4:20", "genre": "Electronic" },
+  { "id": 7, "title": "Neon Paradise", "artist": "VaporWave", "album": "Dreams", "image": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&h=400&fit=crop", "duration": "3:42", "genre": "Vaporwave" },
+  { "id": 8, "title": "Digital Sunrise", "artist": "Morning Beats", "album": "Dawn", "image": "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400&h=400&fit=crop", "duration": "4:15", "genre": "Chillwave" },
+  { "id": 9, "title": "Purple Haze", "artist": "Electric Dreams", "album": "Color Theory", "image": "https://images.unsplash.com/photo-1458560871784-56d23406c091?w=400&h=400&fit=crop", "duration": "3:52", "genre": "Psychedelic" },
+  { "id": 10, "title": "Bass Thunder", "artist": "Heavy Drops", "album": "Impact", "image": "https://images.unsplash.com/photo-1484876065684-b683cf17d276?w=400&h=400&fit=crop", "duration": "4:08", "genre": "Dubstep" },
+  { "id": 11, "title": "Starlight", "artist": "Cosmic Beats", "album": "Galaxy", "image": "https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=400&h=400&fit=crop", "duration": "3:55", "genre": "Ambient" },
+  { "id": 12, "title": "Future Funk", "artist": "Groove Machine", "album": "Funky Town", "image": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop", "duration": "4:25", "genre": "Funk" }
+]
