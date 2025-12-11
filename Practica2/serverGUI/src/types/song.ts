@@ -1,4 +1,4 @@
-export type SortOption = 'alphabetical' | 'genre';
+export type SortOption = 'alphabetical' | 'year';
 
 export interface Song {
   id: number;
@@ -7,5 +7,5 @@ export interface Song {
   album: string;
   image: string;
   duration: string;
-  genre: string;
+  year: string;
 }

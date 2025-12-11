@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "bootstrap": "^5.3.8",
+    "buffer": "^6.0.3",
+    "music-metadata-browser": "^2.5.11",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

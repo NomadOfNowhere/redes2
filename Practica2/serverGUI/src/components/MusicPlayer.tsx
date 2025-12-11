@@ -28,7 +28,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
       <p className="player-album">{song.album}</p>
 
       <div className="player-tags">
-        <span className="tag-genre">{song.genre}</span>
+        <span className="tag-genre">{song.year}</span>
         <span className="tag-duration">{song.duration}</span>
       </div>
 
