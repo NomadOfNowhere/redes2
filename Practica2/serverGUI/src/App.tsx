@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import { type Song, type SortOption } from './types/song';
 import { SortDropdown } from './components/SortDropdown'
 import { SongsGrid } from './components/SongsGrid';
@@ -92,12 +91,12 @@ const MusicGallery: React.FC = () => {
       </div>
     );
   }
-
+// col-6 col-sm-4 col-md-3 col-lg-2
   return (
     <div className="music-gallery">
       <div className="container-fluid music-container">
         <div className="row">
-          <div className="col-lg-8">
+          <div className="col-6 col-sm-7 col-md-8 col-lg-8">
             <div className="gallery-header">
               <h1 className="gallery-title">Mi Biblioteca Musical</h1>
               <SortDropdown sortBy={sortBy} onSortChange={setSortBy} />
@@ -111,7 +110,7 @@ const MusicGallery: React.FC = () => {
             />
           </div>
 
-          <div className="col-lg-4">
+          <div className="col-6 col-sm-5 col-md-4 col-lg-4">
             <MusicPlayer song={selectedSong}
                          onNext={handleNext}
                          onPrev={handlePrev}

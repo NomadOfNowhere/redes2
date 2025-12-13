@@ -60,7 +60,11 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
           className={`control-button control-play ${isPlaying ? 'active' : ''}`} 
           onClick={togglePlayback}
         >
-          {isPlaying ? '⏹' : '▶'}
+          {isPlaying ? (
+              <i className="bi bi-stop-fill"></i>
+          ) : (
+              <i className="bi bi-play-fill"></i>
+          )}
         </button>
       </div>
       </div>
@@ -97,16 +101,22 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
       </div>
 
       <div className="player-controls">
-        <button className="control-button control-prev">☁️</button>
+        <button className="control-button control-prev">
+          <i className="bi bi-cloud-arrow-down-fill"></i>
+        </button>
+
         <button 
           className={`control-button control-play ${isPlaying ? 'active' : ''}`} 
           onClick={togglePlayback}
         >
-          {isPlaying ? '⏹' : '▶'}
+          {isPlaying ? (
+              <i className="bi bi-play-fill"></i>
+          ) : (
+              <i className="bi bi-pause-fill"></i>
+          )}
         </button>
       </div>
     </div>
   );
 };
-// 📶 📡
 

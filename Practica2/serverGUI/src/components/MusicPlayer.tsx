@@ -78,15 +78,25 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song, onNext, onPrev }
       </div>
 
       <div className="player-controls">
-        <button className="control-button control-prev" onClick={onPrev}>⬅</button>
+        <button className="control-button control-prev" onClick={onPrev}>
+          <i className="bi bi-skip-backward-fill"></i>
+        </button>
+
         <button 
           className={`control-button control-play ${isPlaying ? 'active' : ''}`} 
           onClick={togglePlayback}
         >
-          {isPlaying ? '⏹' : '▶'}
+          {isPlaying ? (
+              <i className="bi bi-pause-fill"></i>
+          ) : (
+              <i className="bi bi-play-fill"></i>
+          )}
         </button>
-        <button className="control-button control-next" onClick={onNext}>➡</button>
+        <button className="control-button control-next" onClick={onNext}>
+          <i className="bi bi-skip-forward-fill"></i>
+        </button>
       </div>
     </div>
   );
 };
+// ⬅ ➡

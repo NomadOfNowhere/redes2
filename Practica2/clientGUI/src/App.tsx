@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-// import { type Song, type SortOption } from './types/song';
-// import { SongsGrid } from './components/SongsGrid';
 import { MusicPlayer } from './components/MusicPlayer';
-// import { extractMetadata } from './data/extractMetadata';
 
 const MusicGallery: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
