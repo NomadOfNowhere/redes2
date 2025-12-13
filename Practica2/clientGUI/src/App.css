@@ -1,42 +1,340 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+/* ==================== VARIABLES Y ESTILOS GLOBALES ==================== */
+:root {
+  --color-bg-primary: #1a1a1a;
+  --color-bg-secondary: #1f1f1f;
+  --color-bg-tertiary: #2d2d2d;
+  --color-purple-light: #a78bfa;
+  --color-purple-medium: #8b5cf6;
+  --color-purple-dark: #6d28d9;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #888888;
+  --color-gradient-start: #1a1a1a;
+  --color-gradient-end: #2d1b3d;
+}
+
+body {
+  background-color: var(--color-bg-primary);
+}
+
+/* ==================== LAYOUT PRINCIPAL ==================== */
+.music-gallery {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--color-gradient-start) 0%, var(--color-gradient-end) 100%);
+  padding: 40px 20px;
+}
+
+.music-container {
+  max-width: 1800px;
+}
+
+.loading-screen {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--color-gradient-start) 0%, var(--color-gradient-end) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-purple-light);
+  font-size: 1.5rem;
+}
+
+/* ==================== HEADER ==================== */
+.gallery-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.gallery-title {
+  color: var(--color-text-primary);
+  font-weight: 700;
+  font-size: 2rem;
+  margin: 0;
+}
+
+/* ==================== SORT DROPDOWN ==================== */
+.sort-button {
+  background-color: var(--color-bg-tertiary) !important;
+  color: var(--color-purple-light) !important;
+  border: 1px solid var(--color-purple-dark) !important;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.dropdown-menu-custom {
+  background-color: var(--color-bg-tertiary) !important;
+}
+
+.dropdown-item-custom {
+  color: var(--color-purple-light) !important;
+}
+
+.dropdown-item-custom:hover {
+  background-color: #3d3d3d !important;
+  color: #c4b5fd !important;
+}
+
+/* ==================== SONG CARD ==================== */
+.song-card {
+  background-color: var(--color-bg-secondary);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  height: 100%;
+}
+
+.song-card.hovered {
+  border-color: var(--color-purple-medium);
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+}
+
+.song-card.selected {
+  border-color: var(--color-purple-medium);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+}
+
+.song-card-image-wrapper {
+  position: relative;
+  padding-top: 100%;
+  overflow: hidden;
+}
+
+.song-card-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.song-card-image.zoomed {
+  transform: scale(1.1);
+}
+
+.song-card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(139, 92, 246, 0.8) 0%, transparent 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-button {
+  width: 50px;
+  height: 50px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-icon {
+  width: 0;
+  height: 0;
+  border-left: 15px solid var(--color-purple-medium);
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  margin-left: 4px;
+}
+
+.song-card-body {
+  padding: 0.5rem;
+}
+
+.song-card-title {
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-card-artist {
+  color: var(--color-purple-light);
+  font-size: 0.7rem;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==================== MUSIC PLAYER ==================== */
+.music-player {
+  background-color: var(--color-bg-secondary);
+  border-radius: 16px;
+  padding: 30px;
+  position: sticky;
+  top: 40px;
+  border: 1px solid var(--color-bg-tertiary);
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Empty State */
+.player-empty-state {
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+.empty-title {
+  color: var(--color-purple-light);
+  margin-bottom: 8px;
+}
+
+.empty-text {
+  font-size: 0.9rem;
+}
+
+/* Player Content */
+.player-album-art {
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.3);
+}
+
+.album-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.player-song-title {
+  color: var(--color-text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.player-artist {
+  color: var(--color-purple-light);
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+  text-align: center;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.player-album {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+  text-align: center;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.player-tags {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
-.card {
-  padding: 2em;
+.tag-genre {
+  background-color: var(--color-purple-medium);
+  color: var(--color-text-primary);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
-.read-the-docs {
-  color: #888;
+.tag-duration {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-purple-light);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.progress-bar-wrapper {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background-color: var(--color-bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  width: 45%;
+  height: 100%;
+  background-color: var(--color-purple-medium);
+  border-radius: 2px;
+}
+
+.player-time {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 24px;
+}
+
+.player-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.control-button {
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.control-button:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+.control-prev,
+.control-next {
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-purple-light);
+  font-size: 1.2rem;
+}
+
+.control-play {
+  width: 60px;
+  height: 60px;
+  background-color: var(--color-purple-medium);
+  color: var(--color-text-primary);
+  font-size: 1.5rem;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
 }

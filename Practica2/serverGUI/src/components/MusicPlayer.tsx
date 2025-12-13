@@ -1,16 +1,47 @@
 import { type Song } from "../types/song";
+import React, { useState, useEffect } from 'react';
 
 interface MusicPlayerProps {
   song: Song | null;
+  onNext: () => void;
+  onPrev: () => void;
 }
 
-export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
+export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song, onNext, onPrev }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    const handleProcessClosed = (code: number) => {
+      setIsPlaying(false);
+    };
+    window.electronAPI.onJavaFinished(handleProcessClosed);
+  }, []);
+
+  useEffect(() => {
+    if (isPlaying) {
+      window.electronAPI.stopJava();
+      setIsPlaying(false);
+    }
+  }, [song]);
+
+  const togglePlayback = () => {
+      if (!song) return;
+
+      if (isPlaying) {
+        window.electronAPI.stopJava();
+        setIsPlaying(false);
+      } else {
+        window.electronAPI.startServer(song.filepath);
+        setIsPlaying(true);
+      }
+    };
+
   if (!song) {
     return (
       <div className="music-player">
         <div className="player-empty-state">
           <div className="empty-icon">🎵</div>
-          <h4 className="empty-title">Selecciona una canción</h4>
+          <h4 className="empty-title">Select a song</h4>
           <p className="empty-text">Haz clic en cualquier canción para reproducirla</p>
         </div>
       </div>
@@ -29,24 +60,32 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
 
       <div className="player-tags">
         <span className="tag-genre">{song.year}</span>
-        <span className="tag-duration">{song.duration}</span>
+        {/* <span className="tag-duration">{song.duration}</span> */}
       </div>
 
       <div className="progress-bar-wrapper">
         <div className="progress-bar">
-          <div className="progress-fill" />
+          <div 
+            className="progress-fill" 
+            style={{ width: isPlaying ? '100%' : '0%', transition: 'width 1s ease-in-out' }} 
+          />
         </div>
       </div>
 
       <div className="player-time">
-        <span>1:42</span>
+        <span>{isPlaying ? "Enviando..." : "Listo"}</span>
         <span>{song.duration}</span>
       </div>
 
       <div className="player-controls">
-        <button className="control-button control-prev">⏮</button>
-        <button className="control-button control-play">▶</button>
-        <button className="control-button control-next">⏭</button>
+        <button className="control-button control-prev" onClick={onPrev}>⬅</button>
+        <button 
+          className={`control-button control-play ${isPlaying ? 'active' : ''}`} 
+          onClick={togglePlayback}
+        >
+          {isPlaying ? '⏹' : '▶'}
+        </button>
+        <button className="control-button control-next" onClick={onNext}>➡</button>
       </div>
     </div>
   );

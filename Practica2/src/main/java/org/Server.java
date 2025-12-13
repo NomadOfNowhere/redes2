@@ -23,8 +23,14 @@ public class Server {
             DatagramSocket socket = new DatagramSocket();
             InetAddress address = InetAddress.getByName(CLIENT_IP);
 
+            String filepath = "/songs/My Man on Willpower.mp3";
+
             // Read MP3 file to memory
-            File file = new File("sabrina.mp3");
+            if (args.length > 0 && args[0] != null && !args[0].isEmpty()) {
+                filepath = args[0];
+            }
+
+            File file = new File(filepath);
             FileInputStream f = new FileInputStream(file);
             byte[] fileBytes = f.readAllBytes();
             f.close();

@@ -15,22 +15,23 @@ const MusicGallery: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const loadAllSongs = async () => {
+    const loadSongs = async () => {
       try {
-        const promises = MP3_FILES.map(async (filePath, index) => {
+        setLoading(true);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const promises = MP3_FILES.map(async (filepath, index) => {
           // 1. Preparamos la URL
           // encodeURI es vital aquí porque tus rutas ya tienen "/" 
           // (encodeURIComponent rompería las barras, encodeURI respeta las barras pero codifica espacios y tildes)
-          const url = encodeURI(filePath);
+          const url = encodeURI(filepath);
           const response = await fetch(url);
-          if (!response.ok) throw new Error(`Error cargando ${filePath}`);
+          if (!response.ok) throw new Error(`Error cargando ${filepath}`);
           
           const blob = await response.blob();
 
           // 2. Extraemos los datos
           // Pasamos (index + 1) para que el ID sea 1, 2, 3...
-          const songData = await extractMetadata(blob, index + 1);
-
+          const songData = await extractMetadata(blob, index + 1, "public" + filepath);
           return songData;
         });
 
@@ -40,40 +41,54 @@ const MusicGallery: React.FC = () => {
         setSongs(allSongs);
       } catch (error) {
         console.error("Hubo un error cargando la biblioteca:", error);
-      }
-    };
-
-    loadAllSongs();
-  }, []);
-
-  useEffect(() => {
-    const loadSongs = async () => {
-      try {
-        setLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (error) {
-        console.error('Error al cargar las canciones:', error);
       } finally {
         setLoading(false);
       }
     };
-
     loadSongs();
   }, []);
 
   const sortedSongs = React.useMemo(() => {
     const sorted = [...songs];
-    if (sortBy === 'alphabetical') {
-      return sorted.sort((a, b) => a.title.localeCompare(b.title));
-    } else {
-      return sorted.sort((a, b) => a.year.localeCompare(b.year));
+    switch(sortBy) {
+      case 'alphabetical':
+        return sorted.sort((a, b) => a.title.localeCompare(b.title));
+      case 'artist':
+        return sorted.sort((a, b) => a.artist.localeCompare(b.artist));
+      case 'album':
+        return sorted.sort((a, b) => a.album.localeCompare(b.album));
+      case 'year':
+        return sorted.sort((a, b) => a.year.localeCompare(b.year));
+      case 'duration':
+        const toSeconds = (timeStr : string) => {
+          const [min, sec] = timeStr.split(':').map(Number);
+          return min * 60 + sec;
+        }
+        return sorted.sort((a, b) => toSeconds(a.duration) - toSeconds(b.duration));
     }
   }, [songs, sortBy]);
+
+  const handleNext = () => {
+    if (!selectedSong || sortedSongs.length === 0) return;
+
+    // 1. Buscamos dónde está la canción actual
+    const currentIndex = sortedSongs.findIndex(s => s.id === selectedSong.id);
+    const nextIndex = (currentIndex + 1) % sortedSongs.length;
+    setSelectedSong(sortedSongs[nextIndex]);
+  };
+
+  const handlePrev = () => {
+    if (!selectedSong || sortedSongs.length === 0) return;
+
+    const currentIndex = sortedSongs.findIndex(s => s.id === selectedSong.id);
+    const prevIndex = (currentIndex - 1 + sortedSongs.length) % sortedSongs.length;
+    setSelectedSong(sortedSongs[prevIndex]);
+  };
 
   if (loading) {
     return (
       <div className="loading-screen">
-        Cargando biblioteca musical...
+        Loading music library...
       </div>
     );
   }
@@ -97,7 +112,10 @@ const MusicGallery: React.FC = () => {
           </div>
 
           <div className="col-lg-4">
-            <MusicPlayer song={selectedSong} />
+            <MusicPlayer song={selectedSong}
+                         onNext={handleNext}
+                         onPrev={handlePrev}
+            />
           </div>
         </div>
       </div>

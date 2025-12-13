@@ -1,15 +1,16 @@
 package org;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
-
+import java.io.File; // Importar File
+import java.io.FileInputStream; // Importar FileInputStream
+import java.io.FileOutputStream;
 import javazoom.jl.player.Player;
+// mvn exec:java -Dexec.mainClass="org.ClientSound"
 
 public class ClientSound {
     private static final int PORT = 10000;
@@ -23,8 +24,9 @@ public class ClientSound {
             byte[] receiveData = new byte[PACKET_SIZE];
             System.out.println("Client waiting for packets...");
 
-            // 1. Buffer en memoria RAM
-            ByteArrayOutputStream memoryBuffer = new ByteArrayOutputStream();
+            File tempFile = File.createTempFile("temp", ".mp3");
+            // tempFile.deleteOnExit();
+            FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
             
             int expectedSeq = 0;
             boolean transferStarted = false;
@@ -37,6 +39,8 @@ public class ClientSound {
                     transferStarted = true;
 
                     byte[] data = packet.getData();
+                    if (packet.getLength() < 4) continue;
+
                     int seq = ByteBuffer.wrap(data, 0, 4).getInt();
                     int dataLength = packet.getLength() - 4;
                     InetAddress serverAddress = packet.getAddress();
@@ -49,9 +53,8 @@ public class ClientSound {
                     }
 
                     if(seq == expectedSeq) {
-                        // Guardar en RAM
                         if (dataLength > 0) {
-                            memoryBuffer.write(data, 4, dataLength);
+                            fileOutputStream.write(data, 4, dataLength);
                         }
                         // Opcional: imprimir cada X paquetes para no saturar la consola
                         if (seq % 100 == 0) System.out.println("Received correct: " + seq);
@@ -73,24 +76,23 @@ public class ClientSound {
 
             // Cerrar recursos de red
             socket.close();
+            fileOutputStream.close();
+
+            System.out.println("STATUS:FILE_READY:" + tempFile.getAbsolutePath());
             
             // --- FASE DE REPRODUCCIÓN ---
-            System.out.println("Preparando reproducción...");
+            System.out.println("Preparando reproducción desde archivo...");
+            System.out.println("Tamaño total del archivo en disco: " + tempFile.length() + " bytes");
             
-            // 2. Convertir el buffer a un array de bytes estático
-            byte[] audioData = memoryBuffer.toByteArray();
-            System.out.println("Tamaño total del archivo en RAM: " + audioData.length + " bytes");
-
-            // 3. Crear un InputStream desde los bytes para que JLayer pueda leerlo
-            ByteArrayInputStream bis = new ByteArrayInputStream(audioData);
+            FileInputStream fis = new FileInputStream(tempFile);
 
             // 4. Iniciar el reproductor
-            Player player = new Player(bis);
+            Player player = new Player(fis);
             System.out.println("Reproduciendo música...");
             player.play(); // Esto detendrá el programa hasta que termine la canción
             
             System.out.println("Reproducción terminada.");
-            memoryBuffer.close();
+            fis.close();
 
             System.out.println("Programa terminado exitosamente.");
             System.exit(0);
@@ -106,4 +108,6 @@ public class ClientSound {
         DatagramPacket ackPacket = new DatagramPacket(ackBytes, ackBytes.length, address, port);
         socket.send(ackPacket);
     }
+
+    
 }

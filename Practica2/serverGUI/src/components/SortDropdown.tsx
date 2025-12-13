@@ -11,7 +11,18 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({ sortBy, onSortChange
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const getSortLabel = (sort: SortOption): string => {
-    return sort === 'alphabetical' ? 'Alfabético' : 'Año';
+    switch(sort) {
+      case 'alphabetical':
+        return 'Alfabético';
+      case 'artist':
+        return 'Artista';
+      case 'album':
+        return 'Álbum';
+      case 'year':
+        return 'Año';
+      case 'duration':
+        return 'Duración';
+    }
   };
 
   const handleSelect = (sort: SortOption) => {
@@ -58,6 +69,27 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({ sortBy, onSortChange
             Alfabético
           </button>
         </li>
+
+        <li>
+          <button 
+            className="dropdown-item dropdown-item-custom" 
+            type="button"
+            onClick={() => handleSelect('artist')}
+          >
+            Artista
+          </button>
+        </li>
+
+        <li>
+          <button 
+            className="dropdown-item dropdown-item-custom" 
+            type="button"
+            onClick={() => handleSelect('album')}
+          >
+            Álbum
+          </button>
+        </li>
+
         <li>
           <button 
             className="dropdown-item dropdown-item-custom" 
@@ -65,6 +97,16 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({ sortBy, onSortChange
             onClick={() => handleSelect('year')}
           >
             Año
+          </button>
+        </li>
+
+        <li>
+          <button 
+            className="dropdown-item dropdown-item-custom" 
+            type="button"
+            onClick={() => handleSelect('duration')}
+          >
+            Duración
           </button>
         </li>
       </ul>
