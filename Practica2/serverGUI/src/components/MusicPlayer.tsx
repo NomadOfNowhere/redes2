@@ -17,7 +17,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song, onNext, onPrev }
       if (code === 0) {
         // Iniciar transición a 'sent'
         setIsTransitioning(true);
-        await new Promise(resolve => setTimeout(resolve, 300)); // Duración de fade out
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Duración de fade out
         setStatus('sent');
         setShowRefresh(false);
         setIsTransitioning(false);

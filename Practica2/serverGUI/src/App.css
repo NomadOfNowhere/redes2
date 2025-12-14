@@ -414,9 +414,10 @@ body {
 }
 
 
-        /* Contenedor del dropdown */
+/* Contenedor del dropdown */
 .sort-dropdown-container {
   position: relative;
+  margin-left: auto;
 }
 
 /* Botón principal - Desktop (pantallas grandes) */
