@@ -35,7 +35,7 @@ const MusicGallery: React.FC = () => {
             <div className="header-section">
               <h1 className="gallery-title">
                 Streamify
-                <i className="bi bi-collection-play-fill ms-2"></i>
+                <i className="bi bi-cloud-fog2-fill ms-2"></i>
               </h1>
               <div className="powered-by">
                 <span className="powered-text">powered by UDP!</span>

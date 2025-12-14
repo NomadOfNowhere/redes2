@@ -17,6 +17,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
   useEffect(() => {
     const handleProcessClosed = (code: number) => {
       setPlayerState('idle');
+      setCurrentSong(null);
       console.log(code);
     };
     window.electronAPI.onJavaFinished(handleProcessClosed);
@@ -81,7 +82,11 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
       <div className="music-player">
         <div className={`player-empty-state ${playerState === 'waiting' ? 'waiting' : ''}`}>
           <div className={`empty-icon ${playerState === 'waiting' ? 'pulse-rotate' : ''}`}>
-            {playerState === 'waiting' ? '📡' : '🎵'}
+            {playerState === 'waiting' ? 
+              <i className="bi bi-music-player-fill"></i> :
+              <i className="bi bi-music-note-beamed"></i> 
+            }
+            
           </div>
           <h4 className="empty-title">
             {playerState === 'waiting' ? 'Waiting for stream...' : 'Stream a song!'}
@@ -181,228 +186,6 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
           </div>
         </button>
       </div>
-
-      <style>{`
-        /* Animación de transición entre canciones */
-        .player-album-art.transitioning {
-          opacity: 0;
-          transform: scale(0.9);
-        }
-
-        .player-album-art.just-received {
-          animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        @keyframes popIn {
-          0% {
-            opacity: 0;
-            transform: scale(0.8) rotate(-5deg);
-          }
-          50% {
-            transform: scale(1.05) rotate(2deg);
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1) rotate(0deg);
-          }
-        }
-
-        /* Animación de imagen cuando está reproduciendo */
-        .album-image {
-          transition: transform 0.3s ease;
-        }
-
-        .album-image.playing {
-          animation: subtleRotate 20s linear infinite;
-        }
-
-        @keyframes subtleRotate {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        /* Overlay de reproducción */
-        .playing-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(139, 92, 246, 0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 12px;
-          animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        /* Barras de sonido animadas */
-        .sound-wave {
-          display: flex;
-          gap: 4px;
-          align-items: flex-end;
-          height: 40px;
-        }
-
-        .sound-wave .bar {
-          width: 4px;
-          background: white;
-          border-radius: 2px;
-          animation: soundWave 1s ease-in-out infinite;
-        }
-
-        .sound-wave .bar:nth-child(1) {
-          animation-delay: 0s;
-        }
-
-        .sound-wave .bar:nth-child(2) {
-          animation-delay: 0.2s;
-        }
-
-        .sound-wave .bar:nth-child(3) {
-          animation-delay: 0.4s;
-        }
-
-        .sound-wave .bar:nth-child(4) {
-          animation-delay: 0.6s;
-        }
-
-        @keyframes soundWave {
-          0%, 100% {
-            height: 10px;
-          }
-          50% {
-            height: 40px;
-          }
-        }
-
-        /* Animaciones de slide-in para texto */
-        .slide-in {
-          animation: slideIn 0.5s ease-out;
-        }
-
-        .slide-in.delay-1 {
-          animation-delay: 0.1s;
-          opacity: 0;
-          animation-fill-mode: forwards;
-        }
-
-        .slide-in.delay-2 {
-          animation-delay: 0.2s;
-          opacity: 0;
-          animation-fill-mode: forwards;
-        }
-
-        .slide-in.delay-3 {
-          animation-delay: 0.3s;
-          opacity: 0;
-          animation-fill-mode: forwards;
-        }
-
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        /* Texto "Playing..." pulsante */
-        .playing-text {
-          animation: textPulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes textPulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.5;
-          }
-        }
-
-        /* Animaciones de iconos */
-        .icon-container {
-          position: relative;
-          width: 24px;
-          height: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .icon-animated {
-          position: absolute;
-          opacity: 0;
-          transform: scale(0.5) rotate(-90deg);
-          transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        .icon-animated.visible {
-          opacity: 1;
-          transform: scale(1) rotate(0deg);
-        }
-
-        .icon-stop.visible {
-          animation: stopBounce 0.4s ease-out;
-        }
-
-        @keyframes stopBounce {
-          0% {
-            transform: scale(0.5) rotate(90deg);
-            opacity: 0;
-          }
-          60% {
-            transform: scale(1.2) rotate(-5deg);
-          }
-          100% {
-            transform: scale(1) rotate(0deg);
-            opacity: 1;
-          }
-        }
-
-        /* Hover en botón */
-        .control-button:hover .icon-animated.visible {
-          transform: scale(1.15) rotate(5deg);
-        }
-
-        /* Estado activo del botón */
-        .control-button.active {
-          box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
-          animation: glowPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes glowPulse {
-          0%, 100% {
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
-          }
-          50% {
-            box-shadow: 0 0 30px rgba(139, 92, 246, 0.8);
-          }
-        }
-
-        /* Ajuste para player-album-art */
-        .player-album-art {
-          position: relative;
-          transition: all 0.3s ease;
-        }
-      `}</style>
     </div>
   );
 };
