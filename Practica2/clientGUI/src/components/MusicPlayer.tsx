@@ -76,8 +76,8 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
       <div className="player-album-art">
         <img src={currentSong.image} alt={currentSong.title} className="album-image" />
       </div>
-
-      <h3 className="player-currentSong-title">{currentSong.title}</h3>
+      
+      <h3 className="player-song-title">{currentSong.title}</h3>
       <p className="player-artist">{currentSong.artist}</p>
       <p className="player-album">{currentSong.album}</p>
 
@@ -110,9 +110,9 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
           onClick={togglePlayback}
         >
           {isPlaying ? (
-              <i className="bi bi-play-fill"></i>
-          ) : (
               <i className="bi bi-pause-fill"></i>
+          ) : (
+              <i className="bi bi-play-fill"></i>
           )}
         </button>
       </div>

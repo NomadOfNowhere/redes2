@@ -1,4 +1,4 @@
-import { type Song } from "../types/song";
+import { type Song, type PlayerStatus } from "../types/song";
 import React, { useState, useEffect } from 'react';
 
 interface MusicPlayerProps {
@@ -8,33 +8,50 @@ interface MusicPlayerProps {
 }
 
 export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song, onNext, onPrev }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [status, setStatus] = useState<PlayerStatus>('idle');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showRefresh, setShowRefresh] = useState(false);
 
   useEffect(() => {
-    const handleProcessClosed = (code: number) => {
-      setIsPlaying(false);
+    const handleProcessClosed = async (code: number) => {
+      if (code === 0) {
+        // Iniciar transición a 'sent'
+        setIsTransitioning(true);
+        await new Promise(resolve => setTimeout(resolve, 300)); // Duración de fade out
+        setStatus('sent');
+        setShowRefresh(false);
+        setIsTransitioning(false);
+        
+        // Después de 1.5 segundos, mostrar el icono de refresh
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        setShowRefresh(true);
+      } else {
+        setStatus('idle');
+        setShowRefresh(false);
+      }
     };
     window.electronAPI.onJavaFinished(handleProcessClosed);
   }, []);
 
   useEffect(() => {
-    if (isPlaying) {
+    setStatus('idle');
+    setShowRefresh(false);
+    if (status === 'sending') {
       window.electronAPI.stopJava();
-      setIsPlaying(false);
     }
   }, [song]);
 
   const togglePlayback = () => {
-      if (!song) return;
+    if (!song) return;
 
-      if (isPlaying) {
-        window.electronAPI.stopJava();
-        setIsPlaying(false);
-      } else {
-        window.electronAPI.startServer(song.filepath);
-        setIsPlaying(true);
-      }
-    };
+    if (status === 'idle' || status === 'sent') {
+      window.electronAPI.startServer(song.filepath);
+      setStatus('sending');
+    } else {
+      window.electronAPI.stopJava();
+      setStatus('idle');
+    }
+  };
 
   if (!song) {
     return (
@@ -60,43 +77,50 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song, onNext, onPrev }
 
       <div className="player-tags">
         <span className="tag-genre">{song.year}</span>
-        {/* <span className="tag-duration">{song.duration}</span> */}
       </div>
 
       <div className="progress-bar-wrapper">
         <div className="progress-bar">
           <div 
             className="progress-fill" 
-            style={{ width: isPlaying ? '100%' : '0%', transition: 'width 1s ease-in-out' }} 
+            style={{ 
+              width: status === 'sending' ? '100%' : '0%', 
+              transition: 'width 1s ease-in-out' 
+            }}
           />
         </div>
       </div>
 
       <div className="player-time">
-        <span>{isPlaying ? "Enviando..." : "Listo"}</span>
+        <span>
+          {status === 'idle' && "Listo"}
+          {status === 'sending' && "Enviando..."}
+          {status === 'sent' && "Completado"}
+        </span>
         <span>{song.duration}</span>
       </div>
 
       <div className="player-controls">
         <button className="control-button control-prev" onClick={onPrev}>
-          <i className="bi bi-skip-backward-fill"></i>
+          <i className="bi bi-skip-start-fill"></i>
         </button>
 
         <button 
-          className={`control-button control-play ${isPlaying ? 'active' : ''}`} 
+          className={`control-button control-play ${status === 'idle' ? 'active' : ''}`} 
           onClick={togglePlayback}
         >
-          {isPlaying ? (
-              <i className="bi bi-pause-fill"></i>
-          ) : (
-              <i className="bi bi-play-fill"></i>
-          )}
+          <div className="icon-container">
+            <i className={`bi bi-cloud-arrow-up-fill icon-animated ${status === 'idle' && !isTransitioning ? 'visible' : ''}`}></i>
+            <i className={`bi bi-stop-fill icon-animated ${status === 'sending' && !isTransitioning ? 'visible' : ''}`}></i>
+            <i className={`bi bi-cloud-check-fill icon-animated icon-sent ${status === 'sent' && !showRefresh && !isTransitioning ? 'visible' : ''}`}></i>
+            <i className={`bi bi-arrow-clockwise icon-animated icon-refresh ${status === 'sent' && showRefresh && !isTransitioning ? 'visible' : ''}`}></i>
+          </div>
         </button>
+
         <button className="control-button control-next" onClick={onNext}>
-          <i className="bi bi-skip-forward-fill"></i>
+          <i className="bi bi-skip-end-fill"></i>
         </button>
       </div>
     </div>
   );
 };
-// ⬅ ➡

@@ -19,23 +19,15 @@ const MusicGallery: React.FC = () => {
         setLoading(true);
         await new Promise(resolve => setTimeout(resolve, 500));
         const promises = MP3_FILES.map(async (filepath, index) => {
-          // 1. Preparamos la URL
-          // encodeURI es vital aquí porque tus rutas ya tienen "/" 
-          // (encodeURIComponent rompería las barras, encodeURI respeta las barras pero codifica espacios y tildes)
           const url = encodeURI(filepath);
           const response = await fetch(url);
           if (!response.ok) throw new Error(`Error cargando ${filepath}`);
           
           const blob = await response.blob();
-
-          // 2. Extraemos los datos
-          // Pasamos (index + 1) para que el ID sea 1, 2, 3...
           const songData = await extractMetadata(blob, index + 1, "public" + filepath);
           return songData;
         });
 
-        // 3. Esperamos a que TODAS terminen y guardamos de una sola vez
-        // Esto es mucho más eficiente que hacer setSongs dentro del bucle
         const allSongs = await Promise.all(promises);
         setSongs(allSongs);
       } catch (error) {
@@ -69,8 +61,6 @@ const MusicGallery: React.FC = () => {
 
   const handleNext = () => {
     if (!selectedSong || sortedSongs.length === 0) return;
-
-    // 1. Buscamos dónde está la canción actual
     const currentIndex = sortedSongs.findIndex(s => s.id === selectedSong.id);
     const nextIndex = (currentIndex + 1) % sortedSongs.length;
     setSelectedSong(sortedSongs[nextIndex]);
@@ -78,7 +68,6 @@ const MusicGallery: React.FC = () => {
 
   const handlePrev = () => {
     if (!selectedSong || sortedSongs.length === 0) return;
-
     const currentIndex = sortedSongs.findIndex(s => s.id === selectedSong.id);
     const prevIndex = (currentIndex - 1 + sortedSongs.length) % sortedSongs.length;
     setSelectedSong(sortedSongs[prevIndex]);
@@ -87,20 +76,30 @@ const MusicGallery: React.FC = () => {
   if (loading) {
     return (
       <div className="loading-screen">
-        Loading music library...
+        <div className="loading-spinner"></div>
+        <p>Loading music library...</p>
       </div>
     );
   }
-// col-6 col-sm-4 col-md-3 col-lg-2
+
   return (
     <div className="music-gallery">
       <div className="container-fluid music-container">
         <div className="row">
           <div className="col-6 col-sm-7 col-md-8 col-lg-8">
             <div className="gallery-header">
-              <h1 className="gallery-title">Mi Biblioteca Musical</h1>
+              <div className="header-title-section">
+                <h1 className="gallery-title">
+                  <span className="title-text">Streamify</span>
+                  <i className="bi bi-cloud-haze2-fill ms-1"></i>
+                </h1>
+                <small className="header-subtitle">  
+                  powered by UDP!
+                </small>
+              </div>
               <SortDropdown sortBy={sortBy} onSortChange={setSortBy} />
             </div>
+            
             <SongsGrid
               songs={sortedSongs}
               selectedSong={selectedSong}
@@ -111,9 +110,10 @@ const MusicGallery: React.FC = () => {
           </div>
 
           <div className="col-6 col-sm-5 col-md-4 col-lg-4">
-            <MusicPlayer song={selectedSong}
-                         onNext={handleNext}
-                         onPrev={handlePrev}
+            <MusicPlayer 
+              song={selectedSong}
+              onNext={handleNext}
+              onPrev={handlePrev}
             />
           </div>
         </div>

@@ -10,3 +10,5 @@ export interface Song {
   year: string;
   filepath: string;
 }
+
+export type PlayerStatus = 'idle' | 'sending' | 'sent';

@@ -31,10 +31,11 @@ const MusicGallery: React.FC = () => {
       <div className="container-fluid music-container">
         <div className="row">
           <div className="col-lg-8">
-            <div className="gallery-header">
-              <h1 className="gallery-title">Mi Biblioteca Musical</h1>
-            </div>
-            <div className="col-lg-4">
+            <h1 className="gallery-title">
+              Streamify
+              <i className="bi bi-collection-play-fill  ms-2"></i>
+            </h1>
+          <div className="col-12 col-sm-12 col-md-12 col-lg-12">
             <MusicPlayer song={null}
             />
           </div>
