@@ -7,6 +7,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Recibir datos de Node.js
   onJavaLog: (callback) => ipcRenderer.on('java-log', (_event, value) => callback(value)),
-  
   onJavaFinished: (callback) => ipcRenderer.on('java-process-closed', (_event, code) => callback(code)),
 });

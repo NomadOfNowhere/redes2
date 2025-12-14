@@ -11,18 +11,7 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({ sortBy, onSortChange
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const getSortLabel = (sort: SortOption): string => {
-    switch(sort) {
-      case 'alphabetical':
-        return 'Alfabético';
-      case 'artist':
-        return 'Artista';
-      case 'album':
-        return 'Álbum';
-      case 'year':
-        return 'Año';
-      case 'duration':
-        return 'Duración';
-    }
+    return sort.charAt(0).toUpperCase() + sort.slice(1);
   };
 
   const getSortIcon = (sort: SortOption): string => {
@@ -52,11 +41,9 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({ sortBy, onSortChange
         setIsOpen(false);
       }
     };
-
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -73,7 +60,8 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({ sortBy, onSortChange
         >
           {/* Desktop: Texto completo */}
           <span className="sort-button-text-full">
-            SORT BY: {getSortLabel(sortBy)}
+            <i className={`bi ${getSortIcon(sortBy)} me-1`}></i>
+            {getSortLabel(sortBy)}
           </span>
           
           {/* Tablet: Solo label */}
@@ -97,7 +85,7 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({ sortBy, onSortChange
               onClick={() => handleSelect('alphabetical')}
             >
               <i className="bi bi-sort-alpha-down me-2"></i>
-              <span>Alfabético</span>
+              <span>Alphabetical</span>
             </button>
           </li>
 
@@ -108,7 +96,7 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({ sortBy, onSortChange
               onClick={() => handleSelect('artist')}
             >
               <i className="bi bi-person-fill me-2"></i>
-              <span>Artista</span>
+              <span>Artist</span>
             </button>
           </li>
 
@@ -119,7 +107,7 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({ sortBy, onSortChange
               onClick={() => handleSelect('album')}
             >
               <i className="bi bi-disc-fill me-2"></i>
-              <span>Álbum</span>
+              <span>Album</span>
             </button>
           </li>
 
@@ -130,7 +118,7 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({ sortBy, onSortChange
               onClick={() => handleSelect('year')}
             >
               <i className="bi bi-calendar-fill me-2"></i>
-              <span>Año</span>
+              <span>Year</span>
             </button>
           </li>
 
@@ -141,7 +129,7 @@ export const SortDropdown: React.FC<SortDropdownProps> = ({ sortBy, onSortChange
               onClick={() => handleSelect('duration')}
             >
               <i className="bi bi-clock-fill me-2"></i>
-              <span>Duración</span>
+              <span>Duration</span>
             </button>
           </li>
         </ul>

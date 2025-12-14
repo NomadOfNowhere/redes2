@@ -6,8 +6,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
-import java.io.File; // Importar File
-import java.io.FileInputStream; // Importar FileInputStream
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import javazoom.jl.player.Player;
 // mvn exec:java -Dexec.mainClass="org.ClientSound"
@@ -25,7 +25,6 @@ public class ClientSound {
             System.out.println("Client waiting for packets...");
 
             File tempFile = File.createTempFile("temp", ".mp3");
-            // tempFile.deleteOnExit();
             FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
             
             int expectedSeq = 0;
@@ -56,7 +55,6 @@ public class ClientSound {
                         if (dataLength > 0) {
                             fileOutputStream.write(data, 4, dataLength);
                         }
-                        // Opcional: imprimir cada X paquetes para no saturar la consola
                         if (seq % 100 == 0) System.out.println("Received correct: " + seq);
                         
                         sendAck(socket, seq, serverAddress, serverPort);
@@ -108,6 +106,4 @@ public class ClientSound {
         DatagramPacket ackPacket = new DatagramPacket(ackBytes, ackBytes.length, address, port);
         socket.send(ackPacket);
     }
-
-    
 }

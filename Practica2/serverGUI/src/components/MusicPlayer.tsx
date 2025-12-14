@@ -93,9 +93,9 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song, onNext, onPrev }
 
       <div className="player-time">
         <span>
-          {status === 'idle' && "Listo"}
-          {status === 'sending' && "Enviando..."}
-          {status === 'sent' && "Completado"}
+          {status === 'idle' && "Ready"}
+          {status === 'sending' && "Sending..."}
+          {status === 'sent' && "Completed!"}
         </span>
         <span>{song.duration}</span>
       </div>

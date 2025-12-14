@@ -83,7 +83,6 @@ public class Server {
                     nextSeq = base;
                 }
             }
-
             System.out.println("Transferencia completada. Enviando paquete de FIN.");
 
             // Crear paquete vacío (Solo header, sin datos)

@@ -799,3 +799,17 @@ body {
     font-size: 2.5rem;
   }
 }
+
+.gallery-title i {
+  color: var(--color-text-primary, #8b5cf6);
+  animation: subtleGlow 3s ease-in-out infinite;
+}
+
+@keyframes subtleGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.8));
+  }
+}

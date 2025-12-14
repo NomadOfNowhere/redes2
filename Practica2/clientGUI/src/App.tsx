@@ -21,7 +21,8 @@ const MusicGallery: React.FC = () => {
   if (loading) {
     return (
       <div className="loading-screen">
-        Loading music library...
+        <div className="loading-spinner"></div>
+        <p>Loading music library...</p>
       </div>
     );
   }
@@ -31,14 +32,18 @@ const MusicGallery: React.FC = () => {
       <div className="container-fluid music-container">
         <div className="row">
           <div className="col-lg-8">
-            <h1 className="gallery-title">
-              Streamify
-              <i className="bi bi-collection-play-fill  ms-2"></i>
-            </h1>
-          <div className="col-12 col-sm-12 col-md-12 col-lg-12">
-            <MusicPlayer song={null}
-            />
-          </div>
+            <div className="header-section">
+              <h1 className="gallery-title">
+                Streamify
+                <i className="bi bi-collection-play-fill ms-2"></i>
+              </h1>
+              <div className="powered-by">
+                <span className="powered-text">powered by UDP!</span>
+              </div>
+            </div>
+            <div className="col-12 col-sm-12 col-md-12 col-lg-12">
+              <MusicPlayer song={null} />
+            </div>
           </div>
         </div>
       </div>
