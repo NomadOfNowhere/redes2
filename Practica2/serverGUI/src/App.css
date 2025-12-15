@@ -489,11 +489,10 @@ body {
   }
 
   .dropdown-menu-custom{
-    /* --- CAMBIOS AQUÍ --- */
-  top: 0;           /* 1. Lo sube a la misma altura que el botón */
-  left: 100%;       /* 2. Lo empuja completamente a la derecha del botón */
-  right: auto;      /* 3. ¡Importante! Anula el 'right: 0' anterior */
-  margin-left: 10px; /* 4. Un pequeño espacio para que no estén pegados */
+  top: 0;           
+  left: 100%;       
+  right: auto;      
+  margin-left: 10px;
   }
 }
 
