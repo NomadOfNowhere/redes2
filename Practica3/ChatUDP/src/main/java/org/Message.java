@@ -4,7 +4,7 @@ import java.io.Serializable;
 public class Message implements Serializable {
     private static final long serialVersionUID = 1L;
     // Action types
-    public enum Type { JOIN, TEXT, PRIVATE, LEAVE, LIST, FILE }
+    public enum Type { JOIN, TEXT, DM, LEAVE, FILE, USERS, ROOMS }
     public Type type;
     public String sender;
     public String room;
