@@ -1,0 +1,160 @@
+package com.escom.chat;
+
+import java.net.*;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class ChatServer {
+    private static final int PORT = 5000;
+    private static final int BUFFER_SIZE = 65535; // Max UDP packet size theoretically
+
+    // Structure: Map<RoomName, Map<UserName, ClientInfo>>
+    // ConcurrentHashMap is essential for thread safety in the main map
+    private static Map<String, Map<String, ClientInfo>> rooms = new ConcurrentHashMap<>();
+    private DatagramSocket socket;
+
+    public ChatServer() {
+        try {
+            socket = new DatagramSocket(PORT);
+            System.out.println("UDP Chat Server started on port " + PORT);
+            listen();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void listen() {
+        while (true) {
+            try {
+                byte[] buffer = new byte[BUFFER_SIZE];
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet); // Blocking wait
+
+                // Spawn a worker thread for each packet to avoid blocking the receiver
+                new Thread(new PacketHandler(socket, packet)).start();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // Helper class to store client connection details
+    static class ClientInfo {
+        InetAddress ip;
+        int port;
+        public ClientInfo(InetAddress ip, int port) { this.ip = ip; this.port = port; }
+    }
+
+    // --- WORKER THREAD: Processes individual packets ---
+    class PacketHandler implements Runnable {
+        DatagramSocket socket;
+        DatagramPacket packet;
+
+        public PacketHandler(DatagramSocket s, DatagramPacket p) {
+            this.socket = s;
+            this.packet = p;
+        }
+
+        @Override
+        public void run() {
+            try {
+                // Deserialize the Message object
+                ByteArrayInputStream bais = new ByteArrayInputStream(packet.getData());
+                ObjectInputStream ois = new ObjectInputStream(bais);
+                Message msg = (Message) ois.readObject();
+
+                // Identify sender by the packet's actual IP/Port
+                InetAddress senderIP = packet.getAddress();
+                int senderPort = packet.getPort();
+
+                switch (msg.type) {
+                    case JOIN:
+                        processJoin(msg, senderIP, senderPort);
+                        break;
+                    case TEXT:
+                    case FILE: 
+                        // Files and Texts are treated similarly: broadcast to room
+                        broadcastToRoom(msg);
+                        break;
+                    case PRIVATE:
+                        processPrivate(msg);
+                        break;
+                    case LEAVE:
+                        processLeave(msg);
+                        break;
+                    default:
+                        System.out.println("Unknown message type received.");
+                }
+
+            } catch (Exception e) {
+                System.out.println("Error processing packet: " + e.getMessage());
+            }
+        }
+
+        // --- BUSINESS LOGIC ---
+
+        private void processJoin(Message msg, InetAddress ip, int port) {
+            // Create room if it doesn't exist, then add user
+            rooms.computeIfAbsent(msg.room, k -> new ConcurrentHashMap<>())
+                 .put(msg.sender, new ClientInfo(ip, port));
+            
+            System.out.println(msg.sender + " joined room: " + msg.room);
+            
+            // Notify the room
+            Message notification = new Message(Message.Type.TEXT, "Server", msg.room, msg.sender + " has joined the chat.");
+            broadcastToRoom(notification);
+        }
+
+        private void broadcastToRoom(Message msg) {
+            Map<String, ClientInfo> users = rooms.get(msg.room);
+            if (users == null) return;
+
+            users.forEach((username, info) -> {
+                // Logic: Send to everyone EXCEPT the sender (optional, but typical)
+                if (!username.equals(msg.sender)) {
+                    sendPacket(msg, info.ip, info.port);
+                }
+            });
+        }
+
+        private void processPrivate(Message msg) {
+            Map<String, ClientInfo> users = rooms.get(msg.room);
+            if (users != null && users.containsKey(msg.recipient)) {
+                ClientInfo dest = users.get(msg.recipient);
+                sendPacket(msg, dest.ip, dest.port);
+            }
+        }
+
+        private void processLeave(Message msg) {
+            if (rooms.containsKey(msg.room)) {
+                rooms.get(msg.room).remove(msg.sender);
+                System.out.println(msg.sender + " left room: " + msg.room);
+                
+                Message notification = new Message(Message.Type.TEXT, "Server", msg.room, msg.sender + " has left.");
+                broadcastToRoom(notification);
+            }
+        }
+
+        // --- SENDING HELPER ---
+
+        private void sendPacket(Message msg, InetAddress ip, int port) {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+                oos.writeObject(msg);
+                byte[] data = baos.toByteArray();
+
+                DatagramPacket sendPacket = new DatagramPacket(data, data.length, ip, port);
+                socket.send(sendPacket);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        new ChatServer();
+    }
+}

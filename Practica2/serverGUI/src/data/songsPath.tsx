@@ -1,5 +1,7 @@
 export const MP3_FILES = [
     "resources/songs/00:00.mp3",
+    "resources/songs/Judas.mp3",
+    "resources/songs/Puente (Short version).mp3",
     "resources/songs/APT..mp3",
     "resources/songs/Alicia (Orchestral).mp3",
     "resources/songs/CRAZY.mp3",
