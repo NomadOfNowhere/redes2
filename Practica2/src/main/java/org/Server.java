@@ -23,7 +23,7 @@ public class Server {
             DatagramSocket socket = new DatagramSocket();
             InetAddress address = InetAddress.getByName(CLIENT_IP);
 
-            String filepath = "/songs/My Man on Willpower.mp3";
+            String filepath = "/serverGUI/resources/songs/My Man on Willpower.mp3";    // default test mp3
 
             // Read MP3 file to memory
             if (args.length > 0 && args[0] != null && !args[0].isEmpty()) {

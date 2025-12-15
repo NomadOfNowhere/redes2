@@ -24,7 +24,7 @@ const MusicGallery: React.FC = () => {
           if (!response.ok) throw new Error(`Error cargando ${filepath}`);
           
           const blob = await response.blob();
-          const songData = await extractMetadata(blob, index + 1, "public" + filepath);
+          const songData = await extractMetadata(blob, index + 1, filepath);
           return songData;
         });
 
