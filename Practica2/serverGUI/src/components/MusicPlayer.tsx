@@ -59,7 +59,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song, onNext, onPrev }
         <div className="player-empty-state">
           <div className="empty-icon">🎵</div>
           <h4 className="empty-title">Select a song</h4>
-          <p className="empty-text">Click on any song to stream it</p>
+          <p className="empty-text">Click on any song to start streaming</p>
         </div>
       </div>
     );

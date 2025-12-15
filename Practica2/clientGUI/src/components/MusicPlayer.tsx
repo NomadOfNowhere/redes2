@@ -69,7 +69,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ song }) => {
       case 'idle':
         return 'Ready to stream';
       case 'waiting':
-        return 'Listening to server...';
+        return 'Waiting for server...';
       case 'playing':
         return 'Now playing!';
       default:
