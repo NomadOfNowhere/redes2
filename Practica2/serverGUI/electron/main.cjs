@@ -1,7 +1,7 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, net } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
-
+const { pathToFileURL } = require('url');
 let mainWindow;
 let javaProcess;
 
@@ -83,7 +83,18 @@ function killJava() {
 }
 
 // --- CICLO DE VIDA DE ELECTRON ---
-app.whenReady().then(createWindow);
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'media', privileges: { bypassCSP: true, stream: true, supportFetchAPI: true, secure: true } }
+]);
+
+app.whenReady().then(() => {
+  protocol.handle('media', (request) => {
+    let filePath = request.url.slice('media://'.length);
+    filePath = decodeURIComponent(filePath);
+    return net.fetch(pathToFileURL(filePath).toString());
+  });
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   killJava(); // Importante: No dejar Java corriendo huérfano

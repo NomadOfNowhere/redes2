@@ -10,7 +10,7 @@
         "electron:build": "npm run build && electron-builder",
         "lint": "eslint .",
         "preview": "vite preview",
-        "dist": "npm run build && electron-builder --win"
+        "dist": "npm run build && electron-builder --linux"
     },
     "build": {
         "appId": "com.nomad.clientGUI",

@@ -19,7 +19,8 @@ const MusicGallery: React.FC = () => {
         setLoading(true);
         await new Promise(resolve => setTimeout(resolve, 500));
         const promises = MP3_FILES.map(async (filepath, index) => {
-          const url = encodeURI(filepath);
+          const safePath = filepath.replace(/\\/g, '/');
+          const url = `media://${safePath}`;
           const response = await fetch(url);
           if (!response.ok) throw new Error(`Error cargando ${filepath}`);
           
@@ -27,7 +28,6 @@ const MusicGallery: React.FC = () => {
           const songData = await extractMetadata(blob, index + 1, filepath);
           return songData;
         });
-
         const allSongs = await Promise.all(promises);
         setSongs(allSongs);
       } catch (error) {
