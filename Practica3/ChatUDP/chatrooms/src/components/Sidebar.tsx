@@ -29,6 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     if (newRoomName.trim()) {
       onCreateRoom?.(newRoomName.trim());
       window.electronAPI.sendToJava("/join " + newRoomName.trim());
+      window.electronAPI.sendToJava("/rooms");
       setNewRoomName('');
       setShowModal(false);
     }

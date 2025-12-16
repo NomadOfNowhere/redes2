@@ -59,6 +59,21 @@ function runJava(jarName, args) {
     console.log(`[Java]: ${msg}`);
     if (mainWindow) mainWindow.webContents.send('java-log', msg);
 
+    // DETECTAR LISTA DE SALAS
+    if (msg.startsWith('CMD:ROOMS:')) {
+        try {
+            const jsonString = msg.substring('CMD:ROOMS:'.length);
+            console.log(jsonString);
+            const roomsData = JSON.parse(jsonString);
+
+            if (mainWindow) {
+                mainWindow.webContents.send('rooms-updated', roomsData);
+            }
+        } catch (e) {
+            console.error("Error parseando JSON de salas:", e);
+        }
+    }
+
     if (msg.includes('STATUS:FILE_READY:')) {
       const parts = msg.split('STATUS:FILE_READY:');
       if (parts.length > 1) {
