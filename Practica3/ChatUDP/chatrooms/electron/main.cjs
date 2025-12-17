@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, protocol, net } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const { pathToFileURL } = require('url');
+const { log } = require('console');
 
 let mainWindow;
 let javaProcess;
@@ -45,53 +46,65 @@ ipcMain.on('start-java-client', (event, { name }) => {
 // 3. Detener Java
 ipcMain.on('stop-java', () => killJava());
 
-function runJava(jarName, args) {
-  killJava(); // Matar proceso anterior si existe
-  
-  const jarPath = getJarPath(jarName);
-  console.log(`Iniciando Java: ${jarPath} con args: ${args}`);
+  const CMD_MAP = {
+    'CMD:ROOMS:':   'rooms-updated',
+    'CMD:MYROOMS:': 'myrooms-updated',
+    'CMD:USERS:':   'users-updated'
+  };
 
-  javaProcess = spawn('java', ['-jar', jarPath, ...args]);
-
-  // Escuchar STDOUT de Java y enviarlo a React
-  javaProcess.stdout.on('data', (data) => {
-    const msg = data.toString().trim();
-    console.log(`[Java]: ${msg}`);
-    if (mainWindow) mainWindow.webContents.send('java-log', msg);
-
-    // DETECTAR LISTA DE SALAS
-    if (msg.startsWith('CMD:ROOMS:')) {
-        try {
-            const jsonString = msg.substring('CMD:ROOMS:'.length);
-            console.log(jsonString);
-            const roomsData = JSON.parse(jsonString);
-
-            if (mainWindow) {
-                mainWindow.webContents.send('rooms-updated', roomsData);
-            }
-        } catch (e) {
-            console.error("Error parseando JSON de salas:", e);
-        }
+  function tryParseAndSend(jsonString, channel) {
+    try {
+        const data = JSON.parse(jsonString);
+        // console.log(`[Data ${channel}]:`, data);
+        console.log("xd: " + data);
+        if (mainWindow) mainWindow.webContents.send(channel, data);
+        return true;
+    } catch (e) {
+        console.error(`Error procesando ${jsonString}:`, e);
+        return false;
     }
+  }
 
-    if (msg.includes('STATUS:FILE_READY:')) {
-      const parts = msg.split('STATUS:FILE_READY:');
-      if (parts.length > 1) {
-        let path = parts[1];
+  function runJava(jarName, args) {
+    killJava(); // Matar proceso anterior si existe
+    const jarPath = getJarPath(jarName);
+    console.log(`Iniciando Java: ${jarPath} con args: ${args}`);
+    javaProcess = spawn('java', ['-jar', jarPath, ...args]);
 
-        if (path.includes('\n')) {
-            path = path.split('\n')[0];
-        }
-        if (path.includes('\r')) {
-            path = path.split('\r')[0];
-        }
-        const finalPath = path.trim();
-        if (mainWindow) {
-          mainWindow.webContents.send('song-received', finalPath);
-        }
+    // Escuchar STDOUT de Java y enviarlo a React
+    javaProcess.stdout.on('data', (data) => {
+      const msg = data.toString().trim();
+      console.log(`[Java]: ${msg}`);
+      if (mainWindow) mainWindow.webContents.send('java-log', msg);
+
+      // Comandos JSON
+      const idx = msg.indexOf("[");
+      const cmd = msg.slice(0, idx);
+      const channel = CMD_MAP[cmd];
+      // console.log("idx: " + idx + ", cmd: " + cmd + ", channel: " + channel);
+      if(idx != -1 && channel) {
+        const jsonString = msg.slice(idx);
+        tryParseAndSend(jsonString, channel);
       }
-    }
-  });
+      
+      // if (msg.includes('STATUS:FILE_READY:')) {
+      //   const parts = msg.split('STATUS:FILE_READY:');
+      //   if (parts.length > 1) {
+      //     let path = parts[1];
+
+      //     if (path.includes('\n')) {
+      //         path = path.split('\n')[0];
+      //     }
+      //     if (path.includes('\r')) {
+      //         path = path.split('\r')[0];
+      //     }
+      //     const finalPath = path.trim();
+      //     if (mainWindow) {
+      //       mainWindow.webContents.send('song-received', finalPath);
+      //     }
+      //   }
+      // }
+    });
 
   // 4. Enviar comandos a Java (Escribir en STDIN)
   ipcMain.on('send-to-java', (event, input) => {

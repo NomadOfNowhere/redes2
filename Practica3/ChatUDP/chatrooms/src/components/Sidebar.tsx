@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Hash, Plus, Users, X } from 'lucide-react';
 
 interface Room {
-  id: string;
   name: string;
   users: number;
 }
@@ -24,6 +23,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
+  const [message, setMessage] = useState("Mis salas");
+  const [activeMode, setActiveMode] = useState(false);
 
   const handleCreateRoom = () => {
     if (newRoomName.trim()) {
@@ -40,6 +41,17 @@ const Sidebar: React.FC<SidebarProps> = ({
       handleCreateRoom();
     }
   };
+
+  const handleMode = () => {
+    if(activeMode) {
+      setMessage("Mis salas");
+      setActiveMode(false);
+    }
+    else {
+      setMessage("Salas Disponibles");
+      setActiveMode(true);
+    }
+  }
 
   return (
     <>
@@ -61,9 +73,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex-grow-1 overflow-auto">
           {rooms.map(room => (
             <div 
-              key={room.id}
-              className={`room-item p-3 mb-2 rounded ${activeRoom === room.id ? 'active' : ''}`}
-              onClick={() => onRoomChange(room.id)}
+              key={room.name}
+              className={`room-item p-3 mb-2 rounded ${activeRoom === room.name ? 'active' : ''}`}
+              onClick={() => onRoomChange(room.name)}
             >
               <div className="d-flex justify-content-between align-items-center">
                 <div>
@@ -77,9 +89,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <div className="mt-3">
-          <button className="btn btn-dark-custom w-100 mb-2">
+          <button className="btn btn-dark-custom w-100 mb-2" onClick={handleMode}>
             <Users size={18} className="me-2" />
-            Salas Disponibles
+            {message}
           </button>
 
           <div className="text-center mt-3 pt-3 user-info">

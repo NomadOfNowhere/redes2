@@ -1,12 +1,5 @@
 import type { Message, Room, User } from "../types";
 
-export const ROOMS: Room[] = [
-    { id: 'general', name: 'General', users: 12 },
-    { id: 'tecnologia', name: 'Tecnología', users: 8 },
-    { id: 'random', name: 'Random', users: 15 },
-    { id: 'gaming', name: 'Gaming', users: 6 }
-];
-
 export const USERS: User[] = [
     { id: 1, name: 'Usuario1', status: 'online' },
     { id: 2, name: 'Usuario2', status: 'online' },

@@ -10,8 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ServerGUI {
     private static final int PORT = 10000;
     private static final int BUFFER_SIZE = 65535;
-
     private static Map<String, Map<String, Client>> rooms = new ConcurrentHashMap<>();
+    private static Map<String, String> clients = new ConcurrentHashMap<>();
     private DatagramSocket socket;
 
     public ServerGUI() {
@@ -65,6 +65,7 @@ public class ServerGUI {
                 // Identify sender
                 InetAddress senderIP = packet.getAddress();
                 int senderPort = packet.getPort();
+                System.out.println(senderPort);
 
                 switch(msg.type){
                     case JOIN:
@@ -83,7 +84,10 @@ public class ServerGUI {
                         handleListUsers(msg);
                         break;
                     case ROOMS:
-                        handleListRooms(msg);
+                        handleListRooms(msg, senderIP, senderPort);
+                        break;
+                    case MYROOMS:
+                        handleListMyRooms(msg, senderIP, senderPort);
                         break;
                     default:
                         System.out.println("Unknown message. Try again!");
@@ -121,44 +125,42 @@ public class ServerGUI {
         Map<String, Client> users = rooms.get(msg.room);
         if(users == null) return;
 
-        StringBuilder userList = new StringBuilder("\n--- Users in room: " + msg.room + " ---\n");
-        users.keySet().forEach(username -> userList.append("• ").append(username).append("\n"));
+        StringJoiner joiner = new StringJoiner(",", "CMD:USERS:[", "]");
+        int idx = 0;
+        for(String user : users.keySet()) {
+            // Build JSON object: {"user":"nombre"}
+            joiner.add(String.format("{\"id\":%d,\"name\":\"%s\",\"status\":\"online\"}", idx++, user));
+        }
 
-        Message res = new Message(Message.Type.TEXT, "Server", msg.room, userList.toString());
+        Message res = new Message(Message.Type.USERS, "Server", msg.room, joiner.toString());
         Client to = users.get(msg.sender);
         sendPacket(res, to.ip, to.port);
     }
 
     // Send list of rooms
-    private void handleListRooms(Message msg) {
-        StringBuilder sb = new StringBuilder("CMD:ROOMS:[");
+    private void handleListRooms(Message msg, InetAddress senderIP, int senderPort) {
+        StringJoiner joiner = new StringJoiner(",", "CMD:ROOMS:[", "]");
 
-        int idx = 0;
-        for (var entry : rooms.entrySet()) {
-            String room = entry.getKey();
-            int count = entry.getValue().size();
-
+        rooms.forEach((room, users) -> {
             // Build JSON object: {"id":x, "name":"nombre", "users":y}
-            sb.append(String.format("{\"id\":%d,\"name\":\"%s\",\"users\":%d}", idx, room, count));
+            joiner.add(String.format("{\"name\":\"%s\",\"users\":%d}", room, users.size()));
+        });
+        System.out.println(joiner);
+        Message res = new Message(Message.Type.JOIN, "Server", null, joiner.toString());
+        sendPacket(res, senderIP, senderPort);
+    }
 
-            // Add comma if not last
-            if (idx < rooms.size() - 1) {
-                sb.append(",");
+    // Send list of rooms
+    private void handleListMyRooms(Message msg, InetAddress senderIP, int senderPort) {
+        StringJoiner joiner = new StringJoiner(",", "CMD:MYROOMS:[", "]");
+        rooms.forEach((room, users) -> {
+            if(users.containsKey(msg.sender)) {
+                joiner.add(String.format("{\"name\":\"%s\",\"users\":%d}", room, users.size()));
             }
-            idx++;
-        }
-        sb.append("]");
-
-        // 2. Buscamos al usuario que pidió la lista para responderle solo a él
-        // Asumimos que el usuario está conectado en la sala que indica 'msg.room'
-        Map<String, Client> roomUserList = rooms.get(msg.room);
-        if (roomUserList != null && roomUserList.containsKey(msg.sender)) {
-            Message res = new Message(Message.Type.JOIN, "Server", msg.room, sb.toString());
-            Client to = roomUserList.get(msg.sender);
-            sendPacket(res, to.ip, to.port);
-        } else {
-            System.out.println("User " + msg.sender + " not found in room " + msg.room + ". Cannot send rooms list.");
-        }
+        });
+        System.out.println(joiner);
+        Message res = new Message(Message.Type.JOIN, "Server", null, joiner.toString());
+        sendPacket(res, senderIP, senderPort);
     }
 
     // Send direct message to specific user

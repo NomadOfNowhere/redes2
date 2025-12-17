@@ -2,7 +2,6 @@ import React from 'react';
 import { Hash, LogOut, Send, Paperclip } from 'lucide-react';
 
 interface Room {
-  id: string;
   name: string;
   users: number;
 }

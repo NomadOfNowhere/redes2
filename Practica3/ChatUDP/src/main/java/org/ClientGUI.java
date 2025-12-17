@@ -21,7 +21,7 @@ public class ClientGUI{
             // Init socket on random port (available)
             this.socket = new DatagramSocket();
             this.serverAddress = InetAddress.getByName(SERVER_IP);
-
+            
             // Thread to receive messages in background
             Thread listener = new Thread(new MessageReceiver(socket));
             listener.start();
@@ -60,14 +60,12 @@ public class ClientGUI{
                     // Notify server
                     Message msg = new Message(Message.Type.JOIN, username, currentRoom, null);
                     sendMessage(msg);
-                    System.out.println("--- Joined to room: " + currentRoom + " ---");
                 }
                 break;
            
            case "/switch":
                 if(parts.length > 1){
                     currentRoom = parts[1];
-                    System.out.println("--- Switched to room: " + currentRoom + " ---");
                 }
                 break;
 
@@ -113,7 +111,13 @@ public class ClientGUI{
                 break;
             
             case "/rooms": {
-                    Message msg = new Message(Message.Type.ROOMS, username, currentRoom, null);
+                    Message msg = new Message(Message.Type.ROOMS, username, null, null);
+                    sendMessage(msg);
+                }
+                break;
+            
+            case "/myrooms": {
+                    Message msg = new Message(Message.Type.MYROOMS, username, null, null);
                     sendMessage(msg);
                 }
                 break;
@@ -156,6 +160,9 @@ public class ClientGUI{
         switch(msg.type) {
             case TEXT: case LEAVE:
                 System.out.println(msg.content + ":" + msg.room + ":" + msg.sender);
+                break;
+            case USERS:
+                System.out.println(msg.content);
                 break;
             case JOIN:
                 System.out.println(msg.content);
