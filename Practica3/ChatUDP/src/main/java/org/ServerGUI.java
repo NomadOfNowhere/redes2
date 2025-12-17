@@ -1,9 +1,15 @@
 package org;
 
-import java.net.*;
-import java.io.*;
-import java.nio.channels.DatagramChannel;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.util.Map;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 
 // mvn exec:java -Dexec.mainClass="org.Server"
@@ -68,6 +74,10 @@ public class ServerGUI {
                 System.out.println(senderPort);
 
                 switch(msg.type){
+                    case START:
+                        System.out.println("***INIT***");
+                        handleStart(msg, senderIP, senderPort);
+                        break;
                     case JOIN:
                         handleJoin(msg, senderIP, senderPort);
                         break;
@@ -96,6 +106,11 @@ public class ServerGUI {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void handleStart(Message msg, InetAddress senderIP, int senderPort) {
+        Message res = new Message(Message.Type.START, "Server", null, null);
+        sendPacket(res, senderIP, senderPort);
     }
 
     private void handleJoin(Message msg, InetAddress ip, int port) {

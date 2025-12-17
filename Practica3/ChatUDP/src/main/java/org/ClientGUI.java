@@ -1,8 +1,13 @@
 package org;
 
-import java.io.*;
-import java.net.*;
-import java.nio.file.Files;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.Scanner;
 // mvn exec:java -Dexec.mainClass="org.Client"
 public class ClientGUI{
@@ -14,6 +19,7 @@ public class ClientGUI{
     private InetAddress serverAddress;
     private String username;
     private String currentRoom = "General";
+    private boolean connected = false;
 
     public ClientGUI(String username){
         this.username = username;
@@ -26,6 +32,12 @@ public class ClientGUI{
             Thread listener = new Thread(new MessageReceiver(socket));
             listener.start();
 
+            /* CHECARRRRRR */
+            System.out.println("Esperando respuesta del servidor: ");
+            sendMessage(new Message(Message.Type.START, username, currentRoom, null));
+            while(!connected);
+            System.out.println("Conectado exitosamente!");
+
             // Input loop
             handleInput();
         } catch (Exception e) {
@@ -36,7 +48,6 @@ public class ClientGUI{
     private void handleInput(){
         Scanner scanner = new Scanner(System.in);
         
-        sendMessage(new Message(Message.Type.JOIN, username, currentRoom, null));
         while(true){
             String input = scanner.nextLine();
             if(input.startsWith("/")) {
@@ -148,6 +159,7 @@ public class ClientGUI{
                     ObjectInputStream obj = new ObjectInputStream(b);
                     Message msg = (Message)obj.readObject();
 
+                    System.out.println("[Servidor]: ");
                     showMessage(msg);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -158,6 +170,9 @@ public class ClientGUI{
 
     private void showMessage(Message msg){
         switch(msg.type) {
+            case START:
+                connected = true;
+                break;
             case TEXT: case LEAVE:
                 System.out.println(msg.content + ":" + msg.room + ":" + msg.sender);
                 break;

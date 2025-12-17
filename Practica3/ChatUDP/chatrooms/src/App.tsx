@@ -12,27 +12,29 @@ const App: React.FC = () => {
   const [activeRoom, setActiveRoom] = useState<string>('General');
   const [rooms, setRooms] = useState<Room[]>([]);
   const [userlist, setUserlist] = useState<User[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
+  // Broadcast de salas
   useEffect(() => {
     const removeListener = window.electronAPI.onRoomsUpdated((newRooms) => {
       setRooms(newRooms);
     });
-
     return () => {
       removeListener(); 
     };
   }, []);
 
+  // Broadcast de lista de usuarios
   useEffect(() => {
     const removeListener = window.electronAPI.onUserlistUpdated((newUserlist) => {
       setUserlist(newUserlist);
     });
-
     return () => {
       removeListener(); 
     };
   }, []);
 
+  // Actualizar lista usuarios en la sala
   useEffect(() => {
     window.electronAPI.sendToJava("/switch " + activeRoom);
     window.electronAPI.sendToJava("/who");
@@ -44,6 +46,17 @@ const App: React.FC = () => {
     setIsLoggedIn(true);
   };
 
+  // useEffect(() => {
+  //   const manageConnection = async () => {
+  //     try {
+  //       setLoading(true);
+  //     } catch(error) {
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  // }, []);
+
   useEffect(() => {
     const manageConnection = async () => {
       if (!isLoggedIn) {
@@ -52,11 +65,13 @@ const App: React.FC = () => {
         setRooms([]);
       }
       else {
+        setLoading(true);
         console.log(`Iniciando cliente java como ${username}...`);
         window.electronAPI.startClient(username);
         await new Promise(resolve => setTimeout(resolve, 1000));
         window.electronAPI.sendToJava("/rooms");
         window.electronAPI.sendToJava("/who");
+        setLoading(false);
       }
     };
     manageConnection();
@@ -67,6 +82,16 @@ const App: React.FC = () => {
   }
 
   const activeRoomData = rooms.find(r => r.name === activeRoom);
+
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
+        <p>Logging in...</p>
+      </div>
+    );
+  }
+
 
   return (
     <div className="chat-app">
