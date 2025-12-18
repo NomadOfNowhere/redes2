@@ -19,7 +19,7 @@ public class ClientGUI{
     private InetAddress serverAddress;
     private String username;
     private String currentRoom = "General";
-    private boolean connected = false;
+    private volatile boolean connected = false;
 
     public ClientGUI(String username){
         this.username = username;
@@ -27,16 +27,11 @@ public class ClientGUI{
             // Init socket on random port (available)
             this.socket = new DatagramSocket();
             this.serverAddress = InetAddress.getByName(SERVER_IP);
-            
+
+            System.out.println("MENSAJE DESDE JAVA");
             // Thread to receive messages in background
             Thread listener = new Thread(new MessageReceiver(socket));
             listener.start();
-
-            /* CHECARRRRRR */
-            System.out.println("Esperando respuesta del servidor: ");
-            sendMessage(new Message(Message.Type.START, username, currentRoom, null));
-            while(!connected);
-            System.out.println("Conectado exitosamente!");
 
             // Input loop
             handleInput();
@@ -47,7 +42,28 @@ public class ClientGUI{
 
     private void handleInput(){
         Scanner scanner = new Scanner(System.in);
-        
+
+        int cnt = 0;
+        // Bucle de reintento: Envía y espera, si no responde, envía de nuevo.
+        while (!connected && cnt < 20) {
+            sendMessage(new Message(Message.Type.START, username, currentRoom, null));      
+            try {
+                Thread.sleep(1000); 
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            if (!connected) {
+                // Construimos un JSON simple: { "type": "retry", "msg": "..." }
+                String msg = String.format("Sin respuesta. Reintentando (%d/%d)...", ++cnt, 20);
+                System.out.println("CMD:STATUS:{\"type\":\"info\", \"message\":\"" + msg + "\"}");
+            }
+        }
+        if (!connected) {
+            String errorMsg = "ERROR: ¡No se pudo conectar al servidor!";
+            System.out.println("CMD:STATUS:{\"type\":\"error\", \"message\":\"" + errorMsg + "\"}");
+            System.exit(1);
+        }
+
         while(true){
             String input = scanner.nextLine();
             if(input.startsWith("/")) {
@@ -85,13 +101,20 @@ public class ClientGUI{
                     String text = input.substring(input.indexOf(" ") + 1);
                     Message msg = new Message(Message.Type.TEXT, username, currentRoom, text);
                     sendMessage(msg);
+                    
+                    // Eco local para react
+                    String json = String.format(
+                        "{\"sender\":\"%s\",\"content\":\"%s\",\"room\":\"%s\"}", 
+                        username, text, currentRoom
+                    );
+                    System.out.println("CMD:MSG:" + json);
                 }
                 break;
-                
+
             case "/dm":
                 if(parts.length > 2) {
                     String to = parts[1];
-                    String text = input.substring(input.indexOf(" ") + 1);
+                    String text = parts[2];
                     Message msg = new Message(Message.Type.DM, username, currentRoom, text);
                     msg.receiver = to;
                     sendMessage(msg);
@@ -159,7 +182,6 @@ public class ClientGUI{
                     ObjectInputStream obj = new ObjectInputStream(b);
                     Message msg = (Message)obj.readObject();
 
-                    System.out.println("[Servidor]: ");
                     showMessage(msg);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -172,18 +194,10 @@ public class ClientGUI{
         switch(msg.type) {
             case START:
                 connected = true;
+                System.out.println("CMD:CONNECTED:{}");
                 break;
-            case TEXT: case LEAVE:
-                System.out.println(msg.content + ":" + msg.room + ":" + msg.sender);
-                break;
-            case USERS:
+            case TEXT: case LEAVE: case USERS: case JOIN: case DM:
                 System.out.println(msg.content);
-                break;
-            case JOIN:
-                System.out.println(msg.content);
-                break;
-            case DM:
-                System.out.println("[DM from " + msg.sender + "]: " + msg.content);
                 break;
             case FILE:
                 System.out.println("[" + msg.room + "] " + msg.sender + " sent a file/sticker.");

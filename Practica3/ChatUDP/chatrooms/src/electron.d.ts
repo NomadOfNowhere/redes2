@@ -1,4 +1,4 @@
-import type { Room, User } from "./types";
+import type { ConnectionStatusData, Room, User, Message } from "./types";
 
 export {};
 
@@ -9,9 +9,13 @@ declare global {
       stopJava: () => void;
       sendToJava: (msg: string) => void;
       onJavaLog: (callback: (msg: string) => void) => void;
-      onJavaFinished: (callback: (code: number) => void) => void;
+      onJavaFinished: (callback: (code: number) => void) => () => void;
       onRoomsUpdated: (callback: (rooms: Room[]) => void) => () => void;
+      onMyRoomsUpdated:  (callback: (rooms: Room[]) => void) => () => void;
       onUserlistUpdated: (callback: (rooms: User[]) => void) => () => void;
+      onConnectionSuccess:  (callback: () => void) => () => void;
+      onConnectionStatus:  (callback: (data: ConnectionStatusData) => void) => () => void;
+      onMessageReceived:  (callback: (msg: Message) => void) => () => void;
     };
   }
 }

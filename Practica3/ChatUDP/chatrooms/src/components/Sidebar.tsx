@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
-import { Hash, Plus, Users, X } from 'lucide-react';
-
-interface Room {
-  name: string;
-  users: number;
-}
+import { Hash, Plus, Users, X, LogOut } from 'lucide-react';
+import type { Room } from '../types';
 
 interface SidebarProps {
   rooms: Room[];
@@ -12,6 +8,9 @@ interface SidebarProps {
   username: string;
   onRoomChange: (roomId: string) => void;
   onCreateRoom?: (roomName: string) => void;
+  onLogout?: () => void;
+  viewMode: 'all' | 'mine';
+  onToggleMode: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -19,18 +18,30 @@ const Sidebar: React.FC<SidebarProps> = ({
   activeRoom, 
   username, 
   onRoomChange,
-  onCreateRoom 
+  onCreateRoom,
+  onLogout,
+  viewMode, 
+  onToggleMode,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
-  const [message, setMessage] = useState("Mis salas");
-  const [activeMode, setActiveMode] = useState(false);
+
+  const handleMode = () => {
+      onToggleMode();
+      if (viewMode === 'mine') {
+          window.electronAPI.sendToJava("/rooms");
+      } else {
+          window.electronAPI.sendToJava("/myrooms");
+      }
+  };
 
   const handleCreateRoom = () => {
-    if (newRoomName.trim()) {
-      onCreateRoom?.(newRoomName.trim());
+    const name = newRoomName.trim();
+    if(name) {
+      onCreateRoom?.(name);
       window.electronAPI.sendToJava("/join " + newRoomName.trim());
-      window.electronAPI.sendToJava("/rooms");
+      window.electronAPI.sendToJava("/myrooms");
+      onRoomChange(name);
       setNewRoomName('');
       setShowModal(false);
     }
@@ -42,21 +53,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const handleMode = () => {
-    if(activeMode) {
-      setMessage("Mis salas");
-      setActiveMode(false);
-    }
-    else {
-      setMessage("Salas Disponibles");
-      setActiveMode(true);
-    }
-  }
-
   return (
     <>
-      <div className="col-md-3 sidebar p-3 d-flex flex-column">
-        <div className="mb-4">
+      {/* SECCIÓN SUPERIOR */}
+      <div 
+        className="col-md-3 sidebar p-3 d-flex flex-column"
+        style={{ height: '100vh', maxHeight: '100vh' }} 
+      >
+        <div className="mb-4" style={{ flexShrink: 0 }}>
           <h4 className="mb-3 sidebar-title">
             <Hash size={24} className="me-2" />
             Salas de Chat
@@ -70,15 +74,17 @@ const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        <div className="flex-grow-1 overflow-auto">
+        {/* LISTA DE SALAS */}
+        <div className="flex-grow-1 overflow-auto hide-scrollbar">
           {rooms.map(room => (
             <div 
               key={room.name}
               className={`room-item p-3 mb-2 rounded ${activeRoom === room.name ? 'active' : ''}`}
               onClick={() => onRoomChange(room.name)}
+              style={{ cursor: 'pointer' }}
             >
               <div className="d-flex justify-content-between align-items-center">
-                <div>
+                <div className="text-truncate" style={{ maxWidth: '80%' }}>
                   <Hash size={16} className="me-2 room-icon" />
                   <span className="fw-bold">{room.name}</span>
                 </div>
@@ -88,15 +94,25 @@ const Sidebar: React.FC<SidebarProps> = ({
           ))}
         </div>
 
-        <div className="mt-3">
+        {/* SECCIÓN INFERIOR */}
+        <div className="mt-3" style={{ flexShrink: 0 }}>
           <button className="btn btn-dark-custom w-100 mb-2" onClick={handleMode}>
             <Users size={18} className="me-2" />
-            {message}
+            {viewMode === 'all' ? "Ver Mis Salas" : "Ver Todas las Salas"}
           </button>
 
           <div className="text-center mt-3 pt-3 user-info">
             <small className="text-muted d-block mb-1">Conectado como</small>
-            <strong className="username-display">{username}</strong>
+            <div className="d-flex align-items-center justify-content-center gap-2 mt-2">
+              <strong className="username-display">{username}</strong>
+              <button 
+                className="btn-logout-small"
+                onClick={onLogout}
+                title="Cerrar sesión"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
           </div>
         </div>
       </div>

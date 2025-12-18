@@ -4,11 +4,16 @@ export interface Room {
 }
 
 export interface Message {
-  id: number;
-  user: string;
-  text: string;
-  time: string;
-  isOwn: boolean;
+  sender: string;
+  content: string;
+  room: string;
+  receiver?: string;
+  isPrivate?: boolean;
+  // id: number;
+  // user: string;
+  // text: string;
+  // time: string;
+  // isOwn: boolean;
 }
 
 export interface User {
@@ -16,3 +21,8 @@ export interface User {
   name: string;
   status: 'online' | 'away';
 }
+
+export type ConnectionStatusData = {
+  type: 'info' | 'error';
+  message: string;
+};

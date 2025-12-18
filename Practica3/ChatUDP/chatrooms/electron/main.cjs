@@ -37,19 +37,22 @@ if (!app.isPackaged) {
 }
 
 // --- GESTIÓN DE JAVA (PATRÓN SIDECAR) ---
-// 2. Iniciar Client (Receptor)
+// 1. Iniciar Client (Receptor)
 ipcMain.on('start-java-client', (event, { name }) => {
   console.log(`Iniciando cliente Java como ${name}...`);
   runJava('Client.jar', [name]);
 });
 
-// 3. Detener Java
+// 2. Detener Java
 ipcMain.on('stop-java', () => killJava());
 
   const CMD_MAP = {
-    'CMD:ROOMS:':   'rooms-updated',
-    'CMD:MYROOMS:': 'myrooms-updated',
-    'CMD:USERS:':   'users-updated'
+    'CMD:ROOMS:'    :   'rooms-updated',
+    'CMD:MYROOMS:'  :   'myrooms-updated',
+    'CMD:USERS:'    :   'users-updated',
+    'CMD:CONNECTED:':   'connection-success',
+    'CMD:STATUS:'   :   'connection-status',
+    'CMD:MSG:'      :   'message-received',
   };
 
   function tryParseAndSend(jsonString, channel) {
@@ -73,19 +76,36 @@ ipcMain.on('stop-java', () => killJava());
 
     // Escuchar STDOUT de Java y enviarlo a React
     javaProcess.stdout.on('data', (data) => {
-      const msg = data.toString().trim();
-      console.log(`[Java]: ${msg}`);
-      if (mainWindow) mainWindow.webContents.send('java-log', msg);
+      const chunk = data.toString();
+      const lines = chunk.split('\n');
 
-      // Comandos JSON
-      const idx = msg.indexOf("[");
-      const cmd = msg.slice(0, idx);
-      const channel = CMD_MAP[cmd];
-      // console.log("idx: " + idx + ", cmd: " + cmd + ", channel: " + channel);
-      if(idx != -1 && channel) {
-        const jsonString = msg.slice(idx);
-        tryParseAndSend(jsonString, channel);
-      }
+      lines.forEach(line => {
+        const msg = line.trim();
+        if (!msg || msg.startsWith("Iniciando")) return;
+        console.log(`[Java]: ${msg}`);
+        if (mainWindow) mainWindow.webContents.send('java-log', msg);
+
+        // Comandos JSON
+        let idx = msg.indexOf("[");
+        if (idx === -1) {
+            idx = msg.indexOf("{");
+        }
+
+        // encontramos JSON válido...
+        if (idx !== -1) {
+            const cmd = msg.slice(0, idx).trim();
+            const jsonString = msg.slice(idx);
+            const channel = CMD_MAP[cmd];
+            console.log("Xddd");
+            console.log(cmd);
+            console.log(msg);
+            if (channel) {
+                tryParseAndSend(jsonString, channel);
+            } else {
+                console.log(`[ERROR] Comando no mapeado: '${cmd}'`);
+            }
+        }
+      });
       
       // if (msg.includes('STATUS:FILE_READY:')) {
       //   const parts = msg.split('STATUS:FILE_READY:');
