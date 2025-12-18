@@ -54,7 +54,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>/home/nomad/Documents/Redes2/redes2/Practica3/ChatUDP/chatrooms/resources/binaries</outputDirectory>
+                            <outputDirectory>./chatrooms/resources/binaries</outputDirectory>
                             <finalName>Client</finalName>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">

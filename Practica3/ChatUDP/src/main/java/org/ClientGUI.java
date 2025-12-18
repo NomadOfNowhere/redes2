@@ -138,6 +138,14 @@ public class ClientGUI{
                 }
                 break;
             
+            case "/exit": {
+                    Message msg = new Message(Message.Type.EXIT, username, null, null);
+                    sendMessage(msg);
+                    try { Thread.sleep(500); } catch (InterruptedException e) {}
+                    System.exit(0);
+                }
+                break;
+            
             case "/who": {
                     Message msg = new Message(Message.Type.USERS, username, parts.length > 1 ? parts[1] : currentRoom, null);
                     sendMessage(msg);

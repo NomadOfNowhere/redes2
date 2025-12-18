@@ -98,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="mt-3" style={{ flexShrink: 0 }}>
           <button className="btn btn-dark-custom w-100 mb-2" onClick={handleMode}>
             <Users size={18} className="me-2" />
-            {viewMode === 'all' ? "Ver Mis Salas" : "Ver Todas las Salas"}
+            {viewMode === 'all' ? "Ver Todas las Salas" : "Ver Mis Salas"}
           </button>
 
           <div className="text-center mt-3 pt-3 user-info">

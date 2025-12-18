@@ -72,6 +72,7 @@ const App: React.FC = () => {
 
     // Limpieza al desmontar
     return () => {
+      console.log("Limpiando listeners antiguos...");
       removeSuccessListener();
       removeStatusListener();
       removeRoomsListener();
@@ -80,7 +81,7 @@ const App: React.FC = () => {
       removeMyRoomsListener();
       removeMsgListener();
     };
-  }, []);
+  }, [username]);
 
   // Actualizar lista de usuarios al cambiar de sala
   useEffect(() => {
@@ -100,9 +101,12 @@ const App: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     window.electronAPI.startClient(name);
   };
-  const handleLogout = () => {
-    console.log("Cerrando sesión. Deteniendo cliente java...");
-    window.electronAPI.stopJava();
+  const handleLogout = async () => {
+    console.log("Cerrando sesión. Deteniendo cliente java...")
+    setConnectionStatus({ type: 'info', message: 'Cerrando sesión...' });
+    setLoading(true);
+    window.electronAPI.sendToJava("/exit");
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
   const handleLeaveRoom = () => {
     window.electronAPI.sendToJava("/leave " + activeRoom);

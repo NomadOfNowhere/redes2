@@ -8,6 +8,8 @@ import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
@@ -97,6 +99,9 @@ public class ServerGUI {
                         break;
                     case MYROOMS:
                         handleListMyRooms(msg.sender, senderIP, senderPort);
+                        break;
+                    case EXIT:
+                        handleLeaveAll(msg, senderIP, senderPort);
                         break;
                     default:
                         System.out.println("Unknown message. Try again!");
@@ -277,6 +282,27 @@ public class ServerGUI {
             handleListRooms(null, 0, true);   // broadcast new roomlist
             handleListMyRooms(msg.sender, senderIP, senderPort);
         }
+    }
+
+    private void handleLeaveAll(Message msg, InetAddress senderIP, int senderPort) {
+        List<String> userRooms = new ArrayList<>();
+
+        rooms.forEach((room, users) -> {
+            if (users.containsKey(msg.sender)) {
+                userRooms.add(room);
+            }
+        });
+
+        for (String room : userRooms) {
+            Message leaveMsg = new Message(Message.Type.LEAVE, msg.sender, room, null);
+            handleLeave(leaveMsg, senderIP, senderPort);
+        }
+        // rooms.forEach((room, users) -> {
+        //     if(users.containsKey(msg.sender)) {
+        //         Message newMsg = new Message(Message.Type.LEAVE, msg.sender, room, null);
+        //         handleLeave(newMsg, senderIP, senderPort);
+        //     }
+        // });
     }
 
     // Send a Message object as UDP packet
