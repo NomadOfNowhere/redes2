@@ -85,20 +85,26 @@ const ChatArea: React.FC<ChatAreaProps> = ({ activeTarget, isDmMode, messages, u
   };
 
   const handleSendFile = () => {
-    if (selectedFile) {
-      console.log("Enviando archivo desde: ", selectedFile.path);
-      setSendingFile(true);
-      
+    if (!selectedFile) return;
+    
+    console.log("Enviando archivo desde: ", selectedFile.path);
+    setSendingFile(true);
+    
+    if (isDmMode) {
+      // ENVIAR ARCHIVO POR DM: /dmfile Usuario RutaArchivo
+      window.electronAPI.sendToJava(`/dmfile ${activeTarget} ${selectedFile.path}`);
+    } else {
+      // ENVIAR ARCHIVO A SALA: /file RutaArchivo
       window.electronAPI.sendToJava("/file " + selectedFile.path);
-      
-      setTimeout(() => {
-        setSendingFile(false);
-        setSelectedFile(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      }, 500);
     }
+    
+    setTimeout(() => {
+      setSendingFile(false);
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }, 500);
   };
 
   const handleCancelFile = () => {
