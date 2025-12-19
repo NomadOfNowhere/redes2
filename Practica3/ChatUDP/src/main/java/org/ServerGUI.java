@@ -87,6 +87,9 @@ public class ServerGUI {
                     case DM:
                         handleDM(msg);
                         break;
+                    case DMFILE:
+                        handleDMFile(msg);
+                        break;
                     case LEAVE:
                         handleLeave(msg, senderIP, senderPort);
                         break;
@@ -265,6 +268,21 @@ public class ServerGUI {
             }
         }
     }
+
+    private void handleDMFile(Message msg) {
+    Map<String, Client> users = rooms.get(msg.room);
+    
+    // Verificamos si el usuario destino está en la misma sala
+    if(users != null && users.containsKey(msg.receiver)) {
+        Client to = users.get(msg.receiver);
+        Client from = users.get(msg.sender);
+
+        sendPacket(msg, to.ip, to.port);
+        // if (from != null) {
+        //     sendPacket(msg, from.ip, from.port);
+        // }
+    }
+}
 
     // Handle user leaving the room
     private void handleLeave(Message msg, InetAddress senderIP, int senderPort) {

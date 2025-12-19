@@ -135,6 +135,11 @@ public class ClientGUI{
                 break;
 
             case "/dmfile":
+                if(parts.length > 2) {
+                    String to = parts[1];
+                    String filePath = parts[2];
+                    sendFileToUser(filePath, to);
+                }
                 break;
 
             case "/leave": {
@@ -214,7 +219,7 @@ public class ClientGUI{
             case TEXT: case LEAVE: case USERS: case JOIN: case DM:
                 System.out.println(msg.content);
                 break;
-            case FILE:
+            case FILE: case DMFILE:
                 handleIncomingFile(msg);
                 break;
             default:
@@ -238,69 +243,79 @@ public class ClientGUI{
     }
 
     // New thread preventing Blocking wait
-    private void saveFileToDisk(String originalName, String fileId, int totalChunks, String sender, String room) {
-        try {
-            // Crear la ruta compleja
-            String directoryPath = ".." + java.io.File.separator + 
-                                   "media" + java.io.File.separator + 
-                                   username + java.io.File.separator + 
-                                   "files";
-            
-            java.io.File directory = new java.io.File(directoryPath);
+    private void saveFileToDisk(String originalName, String fileId, int totalChunks, String sender, String room, boolean isPrivate, String receiver) {
+    try {
+        String directoryPath = ".." + java.io.File.separator + 
+                               "media" + java.io.File.separator + 
+                               username + java.io.File.separator + 
+                               "files";
+        
+        java.io.File directory = new java.io.File(directoryPath);
 
-            // 2. CREAR TODA LA ESTRUCTURA DE CARPETAS SI NO EXISTE
-            if (!directory.exists()) {
-                boolean created = directory.mkdirs();
-                if (!created && !directory.exists()) {
-                    System.err.println("ERROR CRÍTICO: No se pudo crear la ruta: " + directory.getAbsolutePath());
+        if (!directory.exists()) {
+            boolean created = directory.mkdirs();
+            if (!created && !directory.exists()) {
+                System.err.println("ERROR CRÍTICO: No se pudo crear la ruta: " + directory.getAbsolutePath());
+            }
+        }
+
+        java.io.File outFile = new java.io.File(directory, "recibido_" + originalName);
+        
+        long fileSize = 0;
+
+        try (java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile)) {
+            java.util.Map<Integer, byte[]> chunks = incomingFiles.get(fileId);
+
+            for (int i = 0; i < totalChunks; i++) {
+                if (chunks.containsKey(i)) {
+                    byte[] chunkData = chunks.get(i);
+                    fos.write(chunkData);
+                    fileSize += chunkData.length;
+                } else {
+                    System.err.println("Error: Archivo corrupto, faltó el pedazo " + i);
                 }
             }
+        }
+        
+        String absolutePath = outFile.getAbsolutePath();
+        System.out.println("Archivo guardado: " + absolutePath);
+        incomingFiles.remove(fileId);
 
-            java.io.File outFile = new java.io.File(directory, "recibido_" + originalName);
-            
-            long fileSize = 0;
-
-            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile)) {
-                java.util.Map<Integer, byte[]> chunks = incomingFiles.get(fileId);
-
-                for (int i = 0; i < totalChunks; i++) {
-                    if (chunks.containsKey(i)) {
-                        byte[] chunkData = chunks.get(i);
-                        fos.write(chunkData);
-                        fileSize += chunkData.length;
-                    } else {
-                        System.err.println("Error: Archivo corrupto, faltó el pedazo " + i);
-                    }
-                }
-            }
-            
-            // Obtener la ruta absoluta del archivo guardado
-            String absolutePath = outFile.getAbsolutePath();
-            System.out.println("Archivo guardado: " + absolutePath);
-            incomingFiles.remove(fileId);
-
-            // Escapar caracteres especiales
-            String safeFileName = originalName.replace("\\", "\\\\").replace("\"", "\\\"");
-            String safePath = absolutePath.replace("\\", "\\\\").replace("\"", "\\\"");
-            
-            // INCLUIR LA RUTA DEL ARCHIVO EN EL JSON
-            String json = String.format(
+        String safeFileName = originalName.replace("\\", "\\\\").replace("\"", "\\\"");
+        String safePath = absolutePath.replace("\\", "\\\\").replace("\"", "\\\"");
+        
+        // Construir JSON con isPrivate
+        String json;
+        if (isPrivate) {
+            json = String.format(
+                "{\"sender\":\"%s\",\"receiver\":\"%s\",\"content\":\"%s\",\"room\":\"%s\",\"isFile\":true,\"isPrivate\":true,\"fileName\":\"%s\",\"fileSize\":%d,\"filePath\":\"%s\"}",
+                sender,
+                username,
+                "Recibió un archivo",
+                room,
+                safeFileName,
+                fileSize,
+                safePath
+            );
+        } else {
+            json = String.format(
                 "{\"sender\":\"%s\",\"content\":\"%s\",\"room\":\"%s\",\"isFile\":true,\"fileName\":\"%s\",\"fileSize\":%d,\"filePath\":\"%s\"}",
                 sender,
                 "Recibió un archivo",
                 room,
                 safeFileName,
                 fileSize,
-                safePath  // NUEVO: Ruta absoluta del archivo
+                safePath
             );
-            
-            System.out.println("CMD:MSG:" + json);
-
-        } catch (IOException e) {
-            System.err.println("Error guardando archivo: " + e.getMessage());
-            e.printStackTrace();
         }
+        
+        System.out.println("CMD:MSG:" + json);
+
+    } catch (IOException e) {
+        System.err.println("Error guardando archivo: " + e.getMessage());
+        e.printStackTrace();
     }
+}
 
     // También actualizar sendFile para incluir la ruta (para el sender)
     private void sendFile(String filePath) {
@@ -364,23 +379,87 @@ public class ClientGUI{
             }
         }).start();
     }
+  
     private void handleIncomingFile(Message msg) {
-        // 1. Crear el mapa para este archivo si es el primer pedazo que llega
         incomingFiles.putIfAbsent(msg.fileId, new ConcurrentHashMap<>());
         java.util.Map<Integer, byte[]> chunks = incomingFiles.get(msg.fileId);
 
-        // 2. Guardar el pedazo actual
         chunks.put(msg.chunkIndex, msg.fileData);
 
-        // 3. Verificar si ya tenemos TODOS los pedazos
         if (chunks.size() == msg.totalChunks) {
             System.out.println("Archivo completo recibido: " + msg.content + " (" + msg.totalChunks + " partes)");
-            saveFileToDisk(msg.content, msg.fileId, msg.totalChunks, msg.sender, msg.room);
+            boolean isPrivate = msg.type == Message.Type.DMFILE;
+            String receiver = msg.receiver != null ? msg.receiver : username;
+            saveFileToDisk(msg.content, msg.fileId, msg.totalChunks, msg.sender, msg.room, isPrivate, receiver);
         } else {
-            // Debug: mostrar progreso
             System.out.println("Recibido chunk " + msg.chunkIndex + "/" + msg.totalChunks + " del archivo " + msg.content);
         }
     }
+
+    private void sendFileToUser(String filePath, String toUser) {
+    new Thread(() -> {  
+        try {
+            java.io.File file = new java.io.File(filePath);
+            if (!file.exists()) {
+                System.out.println("Error: Archivo no encontrado: " + filePath);
+                return;
+            }
+
+            String fileId = java.util.UUID.randomUUID().toString();
+            int chunkSize = 50 * 1024;
+            
+            java.io.FileInputStream f = new java.io.FileInputStream(file);
+            byte[] allBytes = f.readAllBytes();
+            f.close();
+
+            int totalChunks = (int) Math.ceil((double) allBytes.length / chunkSize);
+            System.out.println("Enviando archivo privado a " + toUser + ": " + file.getName() + " (" + totalChunks + " partes)");
+
+            for (int i = 0; i < totalChunks; i++) {
+                int start = i * chunkSize;
+                int length = Math.min(allBytes.length - start, chunkSize);
+                
+                byte[] chunk = new byte[length];
+                System.arraycopy(allBytes, start, chunk, 0, length);
+
+                // Crear mensaje de archivo PRIVADO
+                Message msg = new Message(Message.Type.DMFILE, username, currentRoom, file.getName());
+                msg.receiver = toUser;
+                msg.fileId = fileId;
+                msg.fileData = chunk;
+                msg.chunkIndex = i;
+                msg.totalChunks = totalChunks;
+
+                sendMessage(msg);
+                Thread.sleep(10);
+                
+                if (i % 10 == 0) System.out.println("Enviando parte " + i + "/" + totalChunks);
+            }
+            
+            System.out.println("Archivo privado enviado completamente a " + toUser);
+            
+            // Escapar caracteres
+            String safeFileName = file.getName().replace("\\", "\\\\").replace("\"", "\\\"");
+            String safePath = file.getAbsolutePath().replace("\\", "\\\\").replace("\"", "\\\"");
+            
+            // Eco local para React - MENSAJE PRIVADO
+            String json = String.format(
+                "{\"sender\":\"%s\",\"receiver\":\"%s\",\"content\":\"%s\",\"room\":\"%s\",\"isFile\":true,\"isPrivate\":true,\"fileName\":\"%s\",\"fileSize\":%d,\"filePath\":\"%s\"}", 
+                username,
+                toUser,
+                "Envió un archivo",
+                currentRoom,
+                safeFileName,
+                file.length(),
+                safePath
+            );
+            System.out.println("CMD:MSG:" + json);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }).start();
+}
 
     public static void main(String[] args) {
         String name = "Guest";
