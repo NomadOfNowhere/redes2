@@ -9,8 +9,17 @@ public class Message implements Serializable {
     public String sender;
     public String room;
     public String content;
-    public String receiver;
     public byte[] data;
+
+    // Field for dm
+    public boolean isPrivate;
+    public String receiver;
+
+    // Fields for files
+    public String fileId;      // id para identificar a qué archivo pertenece este pedazo
+    public byte[] fileData;    // Los bytes del pedazo actual
+    public int chunkIndex;     // Número de pedazo (0, 1, 2...)
+    public int totalChunks;    // Total de pedazos
 
     public Message(Type type, String sender, String room, String content) {
         this.type = type;

@@ -391,3 +391,152 @@
   color: white;
   transform: scale(1.05);
 }
+
+.file-message {
+  background: linear-gradient(135deg, rgba(88, 101, 242, 0.1) 0%, rgba(88, 101, 242, 0.05) 100%) !important;
+  border-left: 3px solid #5865f2;
+}
+
+.file-message.own {
+  background: linear-gradient(135deg, rgba(88, 101, 242, 0.2) 0%, rgba(88, 101, 242, 0.1) 100%) !important;
+  border-left: none;
+  border-right: 3px solid #5865f2;
+}
+
+.btn-outline-primary {
+  border: 1px solid #5865f2;
+  color: #5865f2;
+  background: transparent;
+}
+
+.btn-outline-primary:hover {
+  background: #5865f2;
+  color: white;
+}
+
+.file-message {
+  background-color: rgba(88, 101, 242, 0.05);
+  border: 1px solid rgba(88, 101, 242, 0.2);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.message-bubble.own .file-message {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Estilos para mensajes de archivo */
+.file-message-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  min-width: 280px;
+  max-width: 350px;
+}
+
+.file-message-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.file-message-card.own {
+  background: linear-gradient(135deg, #5865F2 0%, #7289DA 100%);
+  box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
+}
+
+.file-message-card.own:hover {
+  box-shadow: 0 6px 20px rgba(88, 101, 242, 0.4);
+}
+
+.file-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.file-message-card:hover .file-icon-wrapper {
+  transform: scale(1.1);
+}
+
+.file-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.file-size {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.file-status {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.file-download-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.file-download-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.file-download-btn:active {
+  transform: scale(0.95);
+}
+
+/* Animación de entrada para archivos */
+@keyframes slideInFile {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.file-message-card {
+  animation: slideInFile 0.3s ease-out;
+}
+
+.spinBtn-animation {
+  animation: spinBtn 1s linear infinite;
+}
+
+@keyframes spinBtn {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

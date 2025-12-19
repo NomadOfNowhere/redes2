@@ -1,8 +1,9 @@
-const { app, BrowserWindow, ipcMain, protocol, net } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, net, shell } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const { pathToFileURL } = require('url');
 const { log } = require('console');
+const fs = require('fs');
 
 let mainWindow;
 let javaProcess;
@@ -25,7 +26,7 @@ function createWindow() {
     },
   });
 
-if (!app.isPackaged) {
+  if (!app.isPackaged) {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
     console.log("Modo Desarrollo: Cargando localhost:5173");
@@ -46,85 +47,88 @@ ipcMain.on('start-java-client', (event, { name }) => {
 // 2. Detener Java
 ipcMain.on('stop-java', () => killJava());
 
-  const CMD_MAP = {
-    'CMD:ROOMS:'    :   'rooms-updated',
-    'CMD:MYROOMS:'  :   'myrooms-updated',
-    'CMD:USERS:'    :   'users-updated',
-    'CMD:CONNECTED:':   'connection-success',
-    'CMD:STATUS:'   :   'connection-status',
-    'CMD:MSG:'      :   'message-received',
-  };
+const CMD_MAP = {
+  'CMD:ROOMS:': 'rooms-updated',
+  'CMD:MYROOMS:': 'myrooms-updated',
+  'CMD:USERS:': 'users-updated',
+  'CMD:CONNECTED:': 'connection-success',
+  'CMD:STATUS:': 'connection-status',
+  'CMD:MSG:': 'message-received',
+};
 
-  function tryParseAndSend(jsonString, channel) {
-    try {
-        const data = JSON.parse(jsonString);
-        // console.log(`[Data ${channel}]:`, data);
-        console.log("xd: " + data);
-        if (mainWindow) mainWindow.webContents.send(channel, data);
-        return true;
-    } catch (e) {
-        console.error(`Error procesando ${jsonString}:`, e);
-        return false;
-    }
+function tryParseAndSend(jsonString, channel) {
+  try {
+    const data = JSON.parse(jsonString);
+    // console.log(`[Data ${channel}]:`, data);
+    console.log("xd: " + data);
+    if (mainWindow) mainWindow.webContents.send(channel, data);
+    return true;
+  } catch (e) {
+    console.error(`Error procesando ${jsonString}:`, e);
+    return false;
   }
+}
 
-  function runJava(jarName, args) {
-    killJava(); // Matar proceso anterior si existe
-    const jarPath = getJarPath(jarName);
-    console.log(`Iniciando Java: ${jarPath} con args: ${args}`);
-    javaProcess = spawn('java', ['-jar', jarPath, ...args]);
+function runJava(jarName, args) {
+  killJava(); // Matar proceso anterior si existe
 
-    // Escuchar STDOUT de Java y enviarlo a React
-    javaProcess.stdout.on('data', (data) => {
-      const chunk = data.toString();
-      const lines = chunk.split('\n');
+  const jarPath = getJarPath(jarName);
+  console.log(`Iniciando Java: ${jarPath} con args: ${args}`);
+  javaProcess = spawn('java', ['-jar', jarPath, ...args]);
 
-      lines.forEach(line => {
-        const msg = line.trim();
-        if (!msg || msg.startsWith("Iniciando")) return;
-        console.log(`[Java]: ${msg}`);
-        if (mainWindow) mainWindow.webContents.send('java-log', msg);
+  // Escuchar STDOUT de Java y enviarlo a React
+  javaProcess.stdout.on('data', (data) => {
+    const chunk = data.toString();
+    const lines = chunk.split('\n');
 
-        // Comandos JSON
-        let idx = msg.indexOf("[");
-        if (idx === -1) {
-            idx = msg.indexOf("{");
+    lines.forEach(line => {
+      const msg = line.trim();
+      if (!msg || msg.startsWith("Iniciando")) return;
+      console.log(`[Java]: ${msg}`);
+      if (mainWindow) mainWindow.webContents.send('java-log', msg);
+
+      // Comandos JSON
+      let idx = msg.indexOf("[");
+      if (idx === -1) {
+        idx = msg.indexOf("{");
+      }
+
+      // encontramos JSON válido...
+      if (idx !== -1) {
+        const cmd = msg.slice(0, idx).trim();
+        const jsonString = msg.slice(idx);
+        const channel = CMD_MAP[cmd];
+        console.log("Xddd");
+        console.log(cmd);
+        console.log(msg);
+        if (channel) {
+          tryParseAndSend(jsonString, channel);
+        } else {
+          console.log(`[ERROR] Comando no mapeado: '${cmd}'`);
         }
-
-        // encontramos JSON válido...
-        if (idx !== -1) {
-            const cmd = msg.slice(0, idx).trim();
-            const jsonString = msg.slice(idx);
-            const channel = CMD_MAP[cmd];
-            console.log("Xddd");
-            console.log(cmd);
-            console.log(msg);
-            if (channel) {
-                tryParseAndSend(jsonString, channel);
-            } else {
-                console.log(`[ERROR] Comando no mapeado: '${cmd}'`);
-            }
-        }
-      });
-      
-      // if (msg.includes('STATUS:FILE_READY:')) {
-      //   const parts = msg.split('STATUS:FILE_READY:');
-      //   if (parts.length > 1) {
-      //     let path = parts[1];
-
-      //     if (path.includes('\n')) {
-      //         path = path.split('\n')[0];
-      //     }
-      //     if (path.includes('\r')) {
-      //         path = path.split('\r')[0];
-      //     }
-      //     const finalPath = path.trim();
-      //     if (mainWindow) {
-      //       mainWindow.webContents.send('song-received', finalPath);
-      //     }
-      //   }
-      // }
+      }
     });
+
+    // if (msg.includes('STATUS:FILE_READY:')) {
+    //   const parts = msg.split('STATUS:FILE_READY:');
+    //   if (parts.length > 1) {
+    //     let path = parts[1];
+
+    //     if (path.includes('\n')) {
+    //         path = path.split('\n')[0];
+    //     }
+    //     if (path.includes('\r')) {
+    //         path = path.split('\r')[0];
+    //     }
+    //     const finalPath = path.trim();
+    //     if (mainWindow) {
+    //       mainWindow.webContents.send('song-received', finalPath);
+    //     }
+    //   }
+    // }
+  });
+
+  ipcMain.removeAllListeners('send-to-java');
 
   // 4. Enviar comandos a Java (Escribir en STDIN)
   ipcMain.on('send-to-java', (event, input) => {
@@ -144,12 +148,12 @@ ipcMain.on('stop-java', () => killJava());
 
   javaProcess.on('close', (code) => {
     console.log(`El proceso Java se cerró con código: ${code}`);
-    
+
     // Le avisamos a React que el proceso ya no existe
     if (mainWindow) {
       mainWindow.webContents.send('java-process-closed', code);
     }
-    
+
     javaProcess = null;
   });
 
@@ -163,6 +167,7 @@ function killJava() {
     javaProcess.kill();
     javaProcess = null;
   }
+  ipcMain.removeAllListeners('send-to-java');
 }
 
 // --- CICLO DE VIDA DE ELECTRON ---

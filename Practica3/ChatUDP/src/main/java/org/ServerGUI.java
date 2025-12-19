@@ -19,7 +19,6 @@ public class ServerGUI {
     private static final int PORT = 10000;
     private static final int BUFFER_SIZE = 65535;
     private static final Map<String, Map<String, Client>> rooms = new ConcurrentHashMap<>();
-    private static final Map<String, String> privateRooms = new ConcurrentHashMap<>();
     private DatagramSocket socket;
 
     public ServerGUI() {
@@ -82,7 +81,7 @@ public class ServerGUI {
                     case JOIN:
                         handleJoin(msg, senderIP, senderPort);
                         break;
-                    case TEXT: case FILE:
+                    case TEXT:
                         handleBroadcast(msg);
                         break;
                     case DM:
@@ -102,6 +101,9 @@ public class ServerGUI {
                         break;
                     case EXIT:
                         handleLeaveAll(msg, senderIP, senderPort);
+                        break;
+                    case FILE:
+                        handleFileBroadcast(msg);
                         break;
                     default:
                         System.out.println("Unknown message. Try again!");
@@ -240,12 +242,12 @@ public class ServerGUI {
             Client to = users.get(msg.receiver);
             Client from = users.get(msg.sender); // Necesitamos al remitente también para enviarle copia
 
-            // 1. Escapar contenido para JSON
+            // Escapar contenido para JSON
             String safeContent = msg.content
                 .replace("\\", "\\\\")
                 .replace("\"", "\\\"");
 
-            // 2. Construir JSON con una propiedad extra "isPrivate": true
+            // Construir JSON con una propiedad extra "isPrivate": true
             String jsonString = String.format(
                 "{\"sender\":\"%s\",\"receiver\":\"%s\",\"content\":\"%s\",\"room\":\"%s\",\"isPrivate\":true}",
                 msg.sender,
@@ -254,10 +256,9 @@ public class ServerGUI {
                 msg.room
             );
             
-            // 3. Empaquetar con la etiqueta CMD:MSG:
+            // Empaquetar con la etiqueta CMD:MSG:
             String finalPayload = "CMD:MSG:" + jsonString;
             Message jsonMsg = new Message(Message.Type.DM, msg.sender, msg.room, finalPayload);
-
             sendPacket(jsonMsg, to.ip, to.port);
             if (from != null) {
                 sendPacket(jsonMsg, from.ip, from.port);
@@ -304,6 +305,19 @@ public class ServerGUI {
         //     }
         // });
     }
+
+    private void handleFileBroadcast(Message msg) {
+        Map<String, Client> users = rooms.get(msg.room);
+        if (users == null) return;
+
+        // Reenviamos el objeto binario TAL CUAL a los demás
+        users.forEach((username, client) -> {
+            if (!username.equals(msg.sender)) {
+                sendPacket(msg, client.ip, client.port);
+            }
+        });
+    }
+
 
     // Send a Message object as UDP packet
     private void sendPacket(Message msg, InetAddress ip, int port) {

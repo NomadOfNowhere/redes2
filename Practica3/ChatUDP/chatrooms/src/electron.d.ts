@@ -16,6 +16,7 @@ declare global {
       onConnectionSuccess:  (callback: () => void) => () => void;
       onConnectionStatus:  (callback: (data: ConnectionStatusData) => void) => () => void;
       onMessageReceived:  (callback: (msg: Message) => void) => () => void;
+      getFilePath: (file: File) => string; 
     };
   }
 }

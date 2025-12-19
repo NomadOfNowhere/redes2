@@ -11,9 +11,16 @@ const UserPanel: React.FC<UserPanelProps> = ({ users, onUserClick }) => {
   const [hoveredUser, setHoveredUser] = useState<number | null>(null);
 
   const handleUserAction = (username: string) => {
-    console.log("hola");
-    onUserClick?.(username);
+    // Aquí ejecutamos la función que viene desde App.tsx
+    if (onUserClick) {
+        onUserClick(username);
+    }
   };
+
+  // const handleUserAction = (username: string) => {
+  //   console.log("hola");
+  //   onUserClick?.(username);
+  // };
 
   return (
     <div className="col-md-3 sidebar p-3">

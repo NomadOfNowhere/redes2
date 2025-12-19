@@ -9,6 +9,9 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Scanner;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 // mvn exec:java -Dexec.mainClass="org.Client"
 public class ClientGUI{
     private static final String SERVER_IP = "127.0.0.1";
@@ -20,6 +23,9 @@ public class ClientGUI{
     private String username;
     private String currentRoom = "General";
     private volatile boolean connected = false;
+
+    // {id, {idxChunk, data}}
+    private final Map<String, java.util.Map<Integer, byte[]>> incomingFiles = new ConcurrentHashMap<>();
 
     public ClientGUI(String username){
         this.username = username;
@@ -123,7 +129,8 @@ public class ClientGUI{
 
             case "/file":
                 if(parts.length > 1){
-                    // sendFile(parts[1]);
+                    String filePath = parts[1];
+                    sendFile(filePath);
                 }
                 break;
 
@@ -208,8 +215,7 @@ public class ClientGUI{
                 System.out.println(msg.content);
                 break;
             case FILE:
-                System.out.println("[" + msg.room + "] " + msg.sender + " sent a file/sticker.");
-                // saveFile(msg);
+                handleIncomingFile(msg);
                 break;
             default:
                 throw new AssertionError();
@@ -231,16 +237,149 @@ public class ClientGUI{
         }
     }
 
-    // private void saveFile(Message msg){*/
-    //     try {
-    //         // String filename = "received_" + System.currentTimeMillis();
-    //     } catch (IOException e) {
-    //         System.out.println("Error saving file: " + e.getMessage());
-    //     }
-    // }
+    // New thread preventing Blocking wait
+    private void saveFileToDisk(String originalName, String fileId, int totalChunks, String sender, String room) {
+        try {
+            // Crear la ruta compleja
+            String directoryPath = ".." + java.io.File.separator + 
+                                   "media" + java.io.File.separator + 
+                                   username + java.io.File.separator + 
+                                   "files";
+            
+            java.io.File directory = new java.io.File(directoryPath);
 
-    private void sendFile(String path) {
+            // 2. CREAR TODA LA ESTRUCTURA DE CARPETAS SI NO EXISTE
+            if (!directory.exists()) {
+                boolean created = directory.mkdirs();
+                if (!created && !directory.exists()) {
+                    System.err.println("ERROR CRÍTICO: No se pudo crear la ruta: " + directory.getAbsolutePath());
+                }
+            }
 
+            java.io.File outFile = new java.io.File(directory, "recibido_" + originalName);
+            
+            long fileSize = 0;
+
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile)) {
+                java.util.Map<Integer, byte[]> chunks = incomingFiles.get(fileId);
+
+                for (int i = 0; i < totalChunks; i++) {
+                    if (chunks.containsKey(i)) {
+                        byte[] chunkData = chunks.get(i);
+                        fos.write(chunkData);
+                        fileSize += chunkData.length;
+                    } else {
+                        System.err.println("Error: Archivo corrupto, faltó el pedazo " + i);
+                    }
+                }
+            }
+            
+            // Obtener la ruta absoluta del archivo guardado
+            String absolutePath = outFile.getAbsolutePath();
+            System.out.println("Archivo guardado: " + absolutePath);
+            incomingFiles.remove(fileId);
+
+            // Escapar caracteres especiales
+            String safeFileName = originalName.replace("\\", "\\\\").replace("\"", "\\\"");
+            String safePath = absolutePath.replace("\\", "\\\\").replace("\"", "\\\"");
+            
+            // INCLUIR LA RUTA DEL ARCHIVO EN EL JSON
+            String json = String.format(
+                "{\"sender\":\"%s\",\"content\":\"%s\",\"room\":\"%s\",\"isFile\":true,\"fileName\":\"%s\",\"fileSize\":%d,\"filePath\":\"%s\"}",
+                sender,
+                "Recibió un archivo",
+                room,
+                safeFileName,
+                fileSize,
+                safePath  // NUEVO: Ruta absoluta del archivo
+            );
+            
+            System.out.println("CMD:MSG:" + json);
+
+        } catch (IOException e) {
+            System.err.println("Error guardando archivo: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // También actualizar sendFile para incluir la ruta (para el sender)
+    private void sendFile(String filePath) {
+        new Thread(() -> {  
+            try {
+                java.io.File file = new java.io.File(filePath);
+                if (!file.exists()) {
+                    System.out.println("Error: Archivo no encontrado: " + filePath);
+                    return;
+                }
+
+                String fileId = java.util.UUID.randomUUID().toString();
+                int chunkSize = 50 * 1024;
+                
+                java.io.FileInputStream f = new java.io.FileInputStream(file);
+                byte[] allBytes = f.readAllBytes();
+                f.close();
+
+                int totalChunks = (int) Math.ceil((double) allBytes.length / chunkSize);
+                System.out.println("Enviando archivo: " + file.getName() + " (" + totalChunks + " partes)");
+
+                for (int i = 0; i < totalChunks; i++) {
+                    int start = i * chunkSize;
+                    int length = Math.min(allBytes.length - start, chunkSize);
+                    
+                    byte[] chunk = new byte[length];
+                    System.arraycopy(allBytes, start, chunk, 0, length);
+
+                    Message msg = new Message(Message.Type.FILE, username, currentRoom, file.getName());
+                    msg.fileId = fileId;
+                    msg.fileData = chunk;
+                    msg.chunkIndex = i;
+                    msg.totalChunks = totalChunks;
+
+                    sendMessage(msg);
+                    Thread.sleep(10);
+                    
+                    if (i % 10 == 0) System.out.println("Enviando parte " + i + "/" + totalChunks);
+                }
+                
+                System.out.println("Archivo enviado completamente.");
+                
+                // Escapar caracteres
+                String safeFileName = file.getName().replace("\\", "\\\\").replace("\"", "\\\"");
+                String safePath = file.getAbsolutePath().replace("\\", "\\\\").replace("\"", "\\\"");
+                
+                // Eco local para React - INCLUIR RUTA
+                String json = String.format(
+                    "{\"sender\":\"%s\",\"content\":\"%s\",\"room\":\"%s\",\"isFile\":true,\"fileName\":\"%s\",\"fileSize\":%d,\"filePath\":\"%s\"}", 
+                    username,
+                    "Envió un archivo",
+                    currentRoom,
+                    safeFileName,
+                    file.length(),
+                    safePath  // NUEVO: Ruta del archivo original
+                );
+                System.out.println("CMD:MSG:" + json);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+    private void handleIncomingFile(Message msg) {
+        // 1. Crear el mapa para este archivo si es el primer pedazo que llega
+        incomingFiles.putIfAbsent(msg.fileId, new ConcurrentHashMap<>());
+        java.util.Map<Integer, byte[]> chunks = incomingFiles.get(msg.fileId);
+
+        // 2. Guardar el pedazo actual
+        chunks.put(msg.chunkIndex, msg.fileData);
+
+        // 3. Verificar si ya tenemos TODOS los pedazos
+        if (chunks.size() == msg.totalChunks) {
+            System.out.println("Archivo completo recibido: " + msg.content + " (" + msg.totalChunks + " partes)");
+            saveFileToDisk(msg.content, msg.fileId, msg.totalChunks, msg.sender, msg.room);
+        } else {
+            // Debug: mostrar progreso
+            System.out.println("Recibido chunk " + msg.chunkIndex + "/" + msg.totalChunks + " del archivo " + msg.content);
+        }
     }
 
     public static void main(String[] args) {

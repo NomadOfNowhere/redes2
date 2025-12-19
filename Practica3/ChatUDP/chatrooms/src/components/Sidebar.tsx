@@ -9,7 +9,7 @@ interface SidebarProps {
   onRoomChange: (roomId: string) => void;
   onCreateRoom?: (roomName: string) => void;
   onLogout?: () => void;
-  viewMode: 'all' | 'mine';
+  viewMode: 'all' | 'mine' | 'dm';
   onToggleMode: () => void;
 }
 
@@ -28,11 +28,22 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleMode = () => {
       onToggleMode();
+
       if (viewMode === 'mine') {
           window.electronAPI.sendToJava("/rooms");
-      } else {
+      } 
+      else if(viewMode === 'all') {
+          
+      } 
+      else {
           window.electronAPI.sendToJava("/myrooms");
       }
+  };
+
+  const buttonTexts = {
+    all: "Todas las Salas",
+    mine: "Mis Salas",
+    dm: "Mis Chats Privados"
   };
 
   const handleCreateRoom = () => {
@@ -98,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="mt-3" style={{ flexShrink: 0 }}>
           <button className="btn btn-dark-custom w-100 mb-2" onClick={handleMode}>
             <Users size={18} className="me-2" />
-            {viewMode === 'all' ? "Ver Todas las Salas" : "Ver Mis Salas"}
+            {buttonTexts[viewMode]}
           </button>
 
           <div className="text-center mt-3 pt-3 user-info">

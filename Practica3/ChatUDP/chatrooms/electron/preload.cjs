@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // Enviar órdenes a Node.js
@@ -7,7 +7,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   sendToJava: (message) => ipcRenderer.send('send-to-java', message),
 
   // Recibir datos de Node.js
-  onJavaLog: (callback) => ipcRenderer.on('java-log', (_event, value) => callback(value)),
+    onJavaLog: (callback) => {
+    const subscription = (_event, value) => callback(value);
+    ipcRenderer.on('java-log', subscription);
+    return () => ipcRenderer.removeListener('java-log', subscription);
+  },
 
   onJavaFinished: (callback) => {
     const subscription = (_event, value) => callback(value);
@@ -49,6 +53,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const subscription = (_event, value) => callback(value);
     ipcRenderer.on('message-received', subscription);
     return () => ipcRenderer.removeListener('message-received', subscription);
-    },
+  },
 
+  getFilePath: (file) => {
+    try {
+        return webUtils.getPathForFile(file);
+      } catch (e) {
+        console.error("Error obteniendo path:", e);
+        return "";
+      }
+    },
 });

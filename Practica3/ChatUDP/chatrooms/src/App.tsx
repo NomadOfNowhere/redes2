@@ -11,14 +11,17 @@ const App: React.FC = () => {
   const [activeRoom, setActiveRoom] = useState<string>('General');
   const [rooms, setRooms] = useState<Room[]>([]);
   const [myRooms, setMyRooms] = useState<Room[]>([]);
+  const [privateRooms, setPrivateRooms] = useState<Room[]>([]);
   const [userlist, setUserlist] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatusData | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [viewMode, setViewMode] = useState<'all' | 'mine'>('mine');
+  const [viewMode, setViewMode] = useState<'all' | 'mine' | 'dm'>('mine');
   
   // Configuración de listeners (puente js-java)
   useEffect(() => {
+    if (!username) return;
+
     // Java envió CMD:CONNECTED
     const removeSuccessListener = window.electronAPI.onConnectionSuccess(async () => {
       console.log("Conectado al server");
@@ -65,10 +68,36 @@ const App: React.FC = () => {
     const removeMsgListener = window.electronAPI.onMessageReceived((newMsg) => {
       console.log("Nuevo mensaje recibido:", newMsg);
       
-      // Agregamos el mensaje nuevo a la lista existente
+      // Debug específico para archivos
+      if (newMsg.isFile) {
+        console.log("[App] ¡Es un archivo!");
+        console.log("[App] - Sender:", newMsg.sender);
+        console.log("[App] - FileName:", newMsg.fileName);
+        console.log("[App] - FileSize:", newMsg.fileSize);
+        console.log("[App] - Room:", newMsg.room);
+      }
+      
+      // Si es un mensaje privado, agregar el chat a la lista de DMs
+      if (newMsg.isPrivate) {
+        const otherUser = newMsg.sender === username ? newMsg.receiver : newMsg.sender;
+        
+        if (otherUser && otherUser !== 'Server') {
+            setPrivateRooms(prev => {
+                const exists = prev.some(room => room.name === otherUser);
+                if (!exists) {
+                    const newDmRoom: Room = { 
+                        name: otherUser, 
+                        users: 2 
+                    };
+                    return [...prev, newDmRoom];
+                }
+                return prev;
+            });
+        }
+      }
+      
       setMessages((prevMessages) => [...prevMessages, newMsg]);
     });
-
 
     // Limpieza al desmontar
     return () => {
@@ -85,12 +114,12 @@ const App: React.FC = () => {
 
   // Actualizar lista de usuarios al cambiar de sala
   useEffect(() => {
-    if(isLoggedIn) {
+    if(isLoggedIn && viewMode !== 'dm') {
       window.electronAPI.sendToJava("/switch " + activeRoom);
       window.electronAPI.sendToJava("/who");
       console.log("Cambiando a sala: " + activeRoom);
     }
-  }, [activeRoom, isLoggedIn]);
+  }, [activeRoom, isLoggedIn, viewMode]);
 
   // Iniciar/cerrar sesión
   const handleLogin = async (name: string) => {
@@ -101,6 +130,7 @@ const App: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     window.electronAPI.startClient(name);
   };
+  
   const handleLogout = async () => {
     console.log("Cerrando sesión. Deteniendo cliente java...")
     setConnectionStatus({ type: 'info', message: 'Cerrando sesión...' });
@@ -108,21 +138,47 @@ const App: React.FC = () => {
     window.electronAPI.sendToJava("/exit");
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
+  
   const handleLeaveRoom = () => {
     window.electronAPI.sendToJava("/leave " + activeRoom);
     const availableRooms = myRooms.filter(r => r.name !== activeRoom);
     const nextRoom = availableRooms.length > 0 ? availableRooms[0].name : '';
     setActiveRoom(nextRoom);
   }
+  
   const clearData = () => {
     setLoading(false);
     setIsLoggedIn(false);
     setRooms([]);
     setMyRooms([]);
+    setPrivateRooms([]);
     setUserlist([]);
     setConnectionStatus(null);
     setUsername('');
+    setMessages([]);
   }
+  
+  const handleStartDM = (targetUser: string) => {
+    // Evitar abrir chat con uno mismo
+    if (targetUser === username) return;
+
+    console.log("Iniciando DM con:", targetUser);
+
+    // A. Agregar a la lista de salas privadas si no existe
+    setPrivateRooms(prev => {
+        const exists = prev.some(r => r.name === targetUser);
+        if (!exists) {
+            return [...prev, { name: targetUser, users: 2 }];
+        }
+        return prev;
+    });
+
+    // B. Cambiar la vista a DMs
+    setViewMode('dm');
+
+    // C. Poner al usuario como el "chat activo"
+    setActiveRoom(targetUser);
+  };
   
   if (loading) {
     return (
@@ -137,9 +193,17 @@ const App: React.FC = () => {
     return <LoginView onLogin={handleLogin} />;
   }
 
-  const activeRoomData = rooms.find(r => r.name === activeRoom);
-  const roomsDisplay = viewMode === 'all' ? rooms : myRooms;
+  // Determinar qué salas mostrar según el modo
+  const roomsDisplay = viewMode === 'all' ? rooms : viewMode === 'mine' 
+                                          ? myRooms : privateRooms;
   
+  // Función para calcular el siguiente modo (ciclo: mine -> all -> dm -> mine)
+  const handleMode = () => {
+    if (viewMode === 'mine') return 'all';
+    else if (viewMode === 'all') return 'dm';
+    else return 'mine';
+  };
+
   return (
     <div className="chat-app">
       <div className="container-fluid h-100">
@@ -151,17 +215,18 @@ const App: React.FC = () => {
             onRoomChange={setActiveRoom}
             viewMode={viewMode}
             onLogout={handleLogout}
-            onToggleMode={() => setViewMode(prev => prev === 'all' ? 'mine' : 'all')}
+            onToggleMode={() => setViewMode(handleMode)}
           />
           
           <ChatArea 
-            room={activeRoomData}
+            activeTarget={activeRoom}
+            isDmMode={viewMode === 'dm'}
             messages={messages}
             username={username}
             onLeaveRoom={handleLeaveRoom}
           />
           
-          <UserList users={userlist} />
+          <UserList users={userlist} onUserClick={handleStartDM}/>
         </div>
       </div>
     </div>
