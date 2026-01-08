@@ -1,16 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Hash, LogOut, Send, Paperclip, X, FileText, File, Check, Loader2, MessageCircle } from 'lucide-react';
-
-interface Message {
-  sender: string;
-  content: string;
-  room: string;
-  isFile?: boolean;
-  fileName?: string;
-  fileSize?: number;
-  isPrivate?: boolean;
-  receiver?: string;
-}
+import type { Message } from '../types';
 
 interface ChatAreaProps {
   activeTarget: string;
@@ -18,9 +8,10 @@ interface ChatAreaProps {
   messages: Message[];
   username: string;
   onLeaveRoom: () => void;
+  isJoined: boolean;
 }
 
-const ChatArea: React.FC<ChatAreaProps> = ({ activeTarget, isDmMode, messages, username, onLeaveRoom }) => {
+const ChatArea: React.FC<ChatAreaProps> = ({ activeTarget, isDmMode, messages, username, onLeaveRoom, isJoined }) => {
   const [inputText, setInputText] = useState('');
   const [selectedFile, setSelectedFile] = useState<{file: File, path: string} | null>(null);
   const [sendingFile, setSendingFile] = useState(false);
@@ -28,6 +19,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ activeTarget, isDmMode, messages, u
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canChat = activeTarget && (isDmMode || isJoined);
 
   // Filtrar mensajes según el modo (DM o Sala)
   const filteredMessages = messages.filter(msg => {
@@ -191,7 +183,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ activeTarget, isDmMode, messages, u
       >
         {filteredMessages.length === 0 ? (
           <div className="d-flex align-items-center justify-content-center h-100">
-            <div className="text-center text-muted">
+            <div className="text-center">
               {isDmMode ? (
                 <MessageCircle size={48} className="mb-3" style={{ opacity: 0.3 }} />
               ) : (
@@ -335,7 +327,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ activeTarget, isDmMode, messages, u
           <button 
             className="btn btn-dark-custom"
             onClick={handleFileClick}
-            disabled={!activeTarget}
+            disabled={!canChat}
           >
             <Paperclip size={18} />
           </button>
@@ -349,9 +341,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({ activeTarget, isDmMode, messages, u
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyPress={handleKeyPress}
-            disabled={!activeTarget}
+            disabled={!canChat}
           />
-          <button className="btn btn-purple" onClick={handleSend} disabled={!activeTarget}>
+          <button className="btn btn-purple" onClick={handleSend} disabled={!canChat}>
             <Send size={18} />
           </button>
         </div>

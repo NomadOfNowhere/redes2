@@ -17,7 +17,7 @@ const App: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatusData | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [viewMode, setViewMode] = useState<'all' | 'mine' | 'dm'>('mine');
-  
+
   // Configuración de listeners (puente js-java)
   useEffect(() => {
     if (!username) return;
@@ -156,6 +156,8 @@ const App: React.FC = () => {
     setConnectionStatus(null);
     setUsername('');
     setMessages([]);
+    setActiveRoom('General');
+    setViewMode('mine');
   }
   
   const handleStartDM = (targetUser: string) => {
@@ -164,7 +166,7 @@ const App: React.FC = () => {
 
     console.log("Iniciando DM con:", targetUser);
 
-    // A. Agregar a la lista de salas privadas si no existe
+    // Agregar a la lista de salas privadas si no existe
     setPrivateRooms(prev => {
         const exists = prev.some(r => r.name === targetUser);
         if (!exists) {
@@ -173,12 +175,16 @@ const App: React.FC = () => {
         return prev;
     });
 
-    // B. Cambiar la vista a DMs
+    // Cambiar la vista a DMs
     setViewMode('dm');
-
-    // C. Poner al usuario como el "chat activo"
+    // Poner al usuario como el "chat activo"
     setActiveRoom(targetUser);
   };
+
+  const isJoined = React.useMemo(() => {
+    if (viewMode === 'dm') return true;
+    return myRooms.some(room => room.name === activeRoom);
+  }, [viewMode, activeRoom, myRooms]);
   
   if (loading) {
     return (
@@ -224,6 +230,7 @@ const App: React.FC = () => {
             messages={messages}
             username={username}
             onLeaveRoom={handleLeaveRoom}
+            isJoined={isJoined}
           />
           
           <UserList users={userlist} onUserClick={handleStartDM}/>

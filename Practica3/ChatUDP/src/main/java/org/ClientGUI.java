@@ -8,8 +8,8 @@ import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.Scanner;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
 // mvn exec:java -Dexec.mainClass="org.Client"
@@ -317,7 +317,7 @@ public class ClientGUI{
     }
 }
 
-    // También actualizar sendFile para incluir la ruta (para el sender)
+    // Send file to server
     private void sendFile(String filePath) {
         new Thread(() -> {  
             try {
@@ -396,6 +396,7 @@ public class ClientGUI{
         }
     }
 
+    // Función para enviar archivos al servidor
     private void sendFileToUser(String filePath, String toUser) {
     new Thread(() -> {  
         try {
@@ -406,7 +407,7 @@ public class ClientGUI{
             }
 
             String fileId = java.util.UUID.randomUUID().toString();
-            int chunkSize = 50 * 1024;
+            int chunkSize = 50 * 1024;         // 50 KB MÁXIMO POR PAQUETE
             
             java.io.FileInputStream f = new java.io.FileInputStream(file);
             byte[] allBytes = f.readAllBytes();

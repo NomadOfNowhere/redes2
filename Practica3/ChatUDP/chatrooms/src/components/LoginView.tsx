@@ -28,7 +28,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             <MessageCircle size={64} className="login-icon" />
           </div>
           <h2 className="login-title">Bienvenido</h2>
-          <p className="text-muted">Ingresa tu nombre de usuario para continuar</p>
+          <p>Ingresa tu nombre de usuario para continuar</p>
         </div>
         
         <div className="mb-4">
@@ -51,7 +51,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         </button>
 
         <div className="text-center mt-4">
-          <small className="text-muted">
+          <small className="text-white" style={{ opacity: 0.7 }}>
             Al continuar, aceptas unirte a las salas de chat públicas
           </small>
         </div>

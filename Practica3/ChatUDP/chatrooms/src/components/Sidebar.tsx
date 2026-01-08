@@ -113,7 +113,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           </button>
 
           <div className="text-center mt-3 pt-3 user-info">
-            <small className="text-muted d-block mb-1">Conectado como</small>
+            <small className="d-block mb-1 text-white" style={{ opacity: 0.4 }}>
+              Conectado como</small>
             <div className="d-flex align-items-center justify-content-center gap-2 mt-2">
               <strong className="username-display">{username}</strong>
               <button 

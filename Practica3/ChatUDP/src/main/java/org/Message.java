@@ -16,7 +16,7 @@ public class Message implements Serializable {
     public String receiver;
 
     // Fields for files
-    public String fileId;      // id para identificar a qué archivo pertenece este pedazo
+    public String fileId;      // uuid para identificar a qué archivo pertenece cada pedazo
     public byte[] fileData;    // Los bytes del pedazo actual
     public int chunkIndex;     // Número de pedazo (0, 1, 2...)
     public int totalChunks;    // Total de pedazos
