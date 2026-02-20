@@ -1,11 +1,31 @@
 package org;
 
-import java.io.*;
-import java.net.*;
-import java.nio.file.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.regex.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.net.ssl.SSLSocketFactory;
 
 public class Client {
@@ -15,75 +35,80 @@ public class Client {
     private static ExecutorService executor;
 
     public static void main(String[] args) {
-        while (true) { 
-            showMenu();
-            int opc = readOption();
-
-            switch (opc) {
-                case 1:
-                    downloadSingleFile();
-                    break;
-                case 2:
-                    downloadRecursively();
-                    break;
-                case 0:
-                    System.out.println("Bye.");
-                    if (executor != null) executor.shutdownNow();
-                    return;
-                default:
-                    System.out.println("Please select a valid option.");
-            }
-            System.err.println("\nPress enter to continue...");
-            scanner.nextLine();
-        }
-    }
-
-    private static void showMenu() {
-        System.out.println("\n--- UGET CLIENT ---");
-        System.out.println("[1]. Download file from URL");
-        System.out.println("[2]. Recursive download");
-        System.out.println("[0]. Exit");
-        System.out.print("Select an option: ");
-    }
-
-    private static int readOption() {
-        try {
-            return Integer.parseInt(scanner.nextLine().trim());
-        } catch (NumberFormatException e) {
-            return -1;
-        }
-    }
-
-    private static String readLine(InputStream in) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        int b;
-        while ((b = in.read()) != -1) {
-            if (b == '\n') break; 
-            if (b != '\r') baos.write(b);
-        }
-        if (baos.size() == 0 && b == -1) return null;
-        return baos.toString("UTF-8");
-    }
-
-    private static void downloadSingleFile() {
-        System.out.println("\nSINGLE FILE DOWNLOAD");
-
-        System.out.print("Enter the file URL: ");
-        String url = scanner.nextLine().trim();
-
-        if(url.isEmpty()) {
-            System.out.println("ERROR: URL Cannot be empty.");
+        if (args.length == 0) {
+            printUsage();
             return;
         }
 
-        System.out.print("Destination directory (default: ./resources): ");
-        String outputDir = scanner.nextLine().trim();
-        if (outputDir.isEmpty()) outputDir = "resources";
-        
-        processDownload(url, outputDir);
+        String url = null;
+        String outputDir = null;
+        boolean recursive = false;
+        int maxDepth = 0;
+
+        try {
+            for (int i = 0; i < args.length; i++) {
+                switch (args[i]) {
+                    case "-p":
+                        if (i + 1 < args.length) outputDir = args[++i];
+                        break;
+                    case "--r":
+                        recursive = true;
+                        break;
+                    case "-d":
+                        if (i + 1 < args.length) maxDepth = Integer.parseInt(args[++i]);
+                        break;
+                    case "--help":
+                        break;
+                    default:
+                        // Asumimos que cualquier argumento suelto es la URL
+                        if (url == null) url = args[i];
+                        break;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing arguments: " + e.getMessage());
+            printUsage();
+            return;
+        }
+
+        if (url == null) {
+            System.err.println("Error: Missing URL.");
+            printUsage();
+            return;
+        }
+
+        if (!url.toLowerCase().startsWith("http://") && !url.toLowerCase().startsWith("https://")) {
+            url = "https://" + url;
+        }
+
+        if (outputDir == null) {
+            try {
+                URI tempUri = new URI(url);
+                String host = tempUri.getHost();
+                if (host != null) {
+                    String safeHost = host.replaceAll("[:\\\\/*?|<>]", "_");
+                    outputDir = Paths.get("resources", safeHost).toString();
+                } else {
+                    outputDir = "resources/unknown";
+                }
+            } catch (URISyntaxException e) {
+                outputDir = "resources/unknown";
+            }
+        }
+
+        System.out.println("Target URL: " + url);
+        System.out.println("Output Directory: " + outputDir);
+
+        if (recursive) {
+            System.out.println("Mode: Recursive (Depth: " + maxDepth + ")");
+            executeRecursiveDownload(url, outputDir, maxDepth);
+        } else {
+            System.out.println("Mode: Single File");
+            executeSingleDownload(url, outputDir);
+        }
     }
 
-    private static void processDownload(String url, String outputDir) {
+    private static void executeSingleDownload(String url, String outputDir) {
         try {
             // Parse URL
             URI parsedUri = new URI(url);
@@ -99,15 +124,13 @@ public class Client {
             if (port == -1) port = "https".equalsIgnoreCase(parsedUri.getScheme()) ? 443 : 80;
 
             // Create destination directory
-            String hostFolder = host.replaceAll("[:\\\\/*?|<>]", "_");
-            Path finalDirPath = Paths.get(outputDir, hostFolder);
-
-            if (!Files.exists(finalDirPath)) {
-                Files.createDirectories(finalDirPath);
-                System.out.println("Directory created: " + finalDirPath.toAbsolutePath());
+            Path dirPath = Paths.get(outputDir);
+            if (!Files.exists(dirPath)) {
+                Files.createDirectories(dirPath);
+                System.out.println("Directory created: " + dirPath.toAbsolutePath());
             }
             
-            String outputPath = Paths.get(outputDir, hostFolder, fileName).toString();
+            String outputPath = Paths.get(outputDir, fileName).toString();
             System.out.println("\nConnecting to " + host + (port != 80 && port != 443 ? ":" + port : ""));
             System.out.println("Requesting resource: " + path);
 
@@ -196,33 +219,11 @@ public class Client {
         } finally {
             if (socket != null && !socket.isClosed()) socket.close(); 
         }
-    }     
+    }    
 
-    private static void downloadRecursively() {
+    private static void executeRecursiveDownload(String urlBase, String outputDir, int maxDepth) {
         System.out.println("\nRECURSIVE FILE DOWNLOAD");
-
-        System.out.print("Enter base URL: ");
-        String urlBase = scanner.nextLine().trim();
-
-        if (urlBase.isEmpty()) {
-            System.out.println("Error: URL cannot be empty.");
-            return;
-        }
-        
-        // Create destination directory
-        System.out.print("Destination directory (default: ./resources): ");
-        String outputDir = scanner.nextLine().trim();
-        if (outputDir.isEmpty()) outputDir = "resources";
-
-        System.out.print("Recursion depth [0-n]: ");
-        System.out.println("\n Level 0: Only specified file");
-        System.out.println("  Level 1: All files in the base URL directory");
-        System.out.println("   Level > 2: Everything referenced from files");
-        System.out.print("\nLevel: ");
-
-        int maxDepth = 0;
         try {
-            maxDepth = Integer.parseInt(scanner.nextLine().trim());
             if (maxDepth < 0) {
                 System.out.println("Level must be >= 0. Defaulting to 0.");
                 maxDepth = 0;
@@ -544,7 +545,44 @@ public class Client {
 
         return normalizedPath.toString();
     }
+
+        private static void printUsage() {
+        System.out.println("\nUsage:");
+        System.out.println("  uget <url>                     Download single file to default folder");
+        System.out.println("  uget -P <dir> <url>            Download to specific directory");
+        System.out.println("  uget --r <url>                 Recursive download (default depth 0)");
+        System.out.println("  uget --r -d <n> <url>          Recursive download with depth n");
+        System.out.println("\nExamples:");
+        System.out.println("  java org.Client codeforces.com");
+        System.out.println("  java org.Client --r -d 1 codeforces.com");
+        System.out.print("Recursion depth [0-n]: ");
+        System.out.println("\n Level 0: Only specified file");
+        System.out.println("  Level 1: All files in the base URL directory");
+        System.out.println("   Level > 2: Everything referenced from files");
+    }
+
+    private static int readOption() {
+        try {
+            return Integer.parseInt(scanner.nextLine().trim());
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    private static String readLine(InputStream in) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int b;
+        while ((b = in.read()) != -1) {
+            if (b == '\n') break; 
+            if (b != '\r') baos.write(b);
+        }
+        if (baos.size() == 0 && b == -1) return null;
+        return baos.toString("UTF-8");
+    }
 }
+
+
+
 
 /*
 
